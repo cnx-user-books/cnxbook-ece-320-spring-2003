@@ -1,0 +1,392 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Low-Pass Fitler Implementation: Filter Specification</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>59183db3-f169-4b34-81f1-3bfd2d88b090</md:uuid>
+</metadata>
+
+
+
+  <content>
+    <section id="s1">
+      <title>Filter Specification</title>
+
+
+      <figure id="filterfig">
+	<title>Depiction of the filter specifications.</title>
+        <media id="idp6302048" alt=""><image src="../../media/spec.png" mime-type="image/png"/></media>
+      </figure>
+      
+      <table id="filterspec" summary="">
+        <title>Filter specifications</title>
+        <tgroup cols="2">
+	  <tbody>
+            <row>
+              <entry align="center">
+                <m:math>
+                  <m:ci><m:msub>
+                    <m:mi>f</m:mi>
+                    <m:mn>p</m:mn>
+                  </m:msub></m:ci>
+                </m:math>
+              </entry>
+              <entry align="center">0.1</entry>
+            </row>
+            <row>
+              <entry align="center">
+                <m:math display="inline">
+                  <m:ci><m:msub>
+                    <m:mi>f</m:mi>
+                    <m:mn>s</m:mn>
+                  </m:msub></m:ci>
+                </m:math>
+              </entry>
+              <entry align="center">0.12</entry>
+            </row>
+            <row>
+              <entry align="center">
+                <m:math>
+                  <m:ci><m:msub>
+                    <m:mi>δ</m:mi>
+                    <m:mn>p</m:mn>
+                  </m:msub></m:ci>
+                </m:math>
+              </entry>
+              <entry align="center">0.5 dB</entry>
+            </row>
+            <row>
+              <entry align="center">
+                <m:math>
+                  <m:ci><m:msub>
+                    <m:mi>δ</m:mi>
+                    <m:mn>s</m:mn>
+                  </m:msub></m:ci>
+                </m:math>
+              </entry>
+              <entry align="center">-60 dB</entry>
+            </row>
+            <row>
+              <entry align="center">
+                <m:math>
+		  <m:apply>
+		    <m:mo>Δ</m:mo>
+		    <m:ci><m:msub>
+			<m:mi>τ</m:mi>
+			<m:mn>g</m:mn>
+		      </m:msub></m:ci>
+		  </m:apply>
+                </m:math>
+              </entry>
+              <entry align="center">
+                <m:math>
+                  <m:apply>
+		    <m:forall/>
+		    <m:bvar>
+		      <m:ci>f</m:ci>
+		    </m:bvar>
+		    <m:condition>
+		      <m:apply>
+			<m:leq/>
+			<m:apply>
+			  <m:abs/>
+			  <m:ci>f</m:ci>
+			</m:apply>
+			<m:ci><m:msub>
+			    <m:mi>f</m:mi>
+			    <m:mi>p</m:mi>
+			  </m:msub></m:ci>
+		      </m:apply>
+		    </m:condition>
+		    <m:apply>
+		      <m:leq/>
+		      <m:apply>
+			<m:abs/>
+			<m:apply>
+			  <m:mo>Δ</m:mo>
+			  <m:ci><m:msub>
+			      <m:mi>τ</m:mi>
+			      <m:mi>g</m:mi>
+			    </m:msub></m:ci>
+			</m:apply>
+		      </m:apply>
+		      <m:cn>9</m:cn>
+		    </m:apply>
+		  </m:apply>
+                </m:math>
+              </entry>
+            </row>
+	  </tbody>
+        </tgroup>
+      </table>
+
+
+      <para id="p1">
+        Please refer to <link target-id="filterfig">Pictoralial filter
+        specification</link> for a pictorial description of how the
+        various filter constraints correspond to the frequency
+        response of a low-pass filter.  Note that the <link target-id="filterfig">Pictoralial filter specification</link>
+        does not imply that the system response must be equiripple.
+        The constraints on the system response, to be discussed
+        shortly, are on the maximum allowable peak errors.  However,
+        in general, an equiripple solution to a given filter
+        specification will require the lowest filter order.
+      </para>
+
+      <para id="p1b">
+        The full filter specification is given in <link target-id="filterspec">filter specifications</link>.  The
+        parameters
+        <m:math>
+          <m:ci><m:msub>
+            <m:mi>f</m:mi>
+            <m:mn>p</m:mn>
+          </m:msub></m:ci>
+        </m:math> and 
+        <m:math>
+          <m:ci><m:msub>
+	      <m:mi>f</m:mi>
+	      <m:mn>s</m:mn>
+	    </m:msub></m:ci>
+	</m:math> define the end of the pass-band and the beginning of
+        the stop-band, respectively, on the frequency axis that has
+        been normalized to 1.  The parameters
+        <m:math>
+          <m:ci><m:msub>
+	      <m:mi>δ</m:mi>
+	      <m:mn>p</m:mn>
+	    </m:msub></m:ci>
+        </m:math> and 
+        <m:math>
+          <m:ci><m:msub>
+	      <m:mi>δ</m:mi>
+	      <m:mn>s</m:mn>
+	    </m:msub></m:ci>
+        </m:math> define the maximum allowable ripple, in Decibels, in
+        the pass-band and the stop-band, respectively.  The parameter
+        <m:math>
+	  <m:apply>
+	    <m:forall/>
+	    <m:bvar>
+	      <m:ci>f</m:ci>
+	    </m:bvar>
+	    <m:condition>
+	      <m:apply>
+		<m:leq/>
+		<m:apply>
+		  <m:abs/>
+		  <m:ci>f</m:ci>
+		</m:apply>
+		<m:ci><m:msub>
+		    <m:mi>f</m:mi>
+		    <m:mi>p</m:mi>
+		  </m:msub></m:ci>
+	      </m:apply>
+	    </m:condition>
+	    <m:apply>
+	      <m:leq/>
+	      <m:apply>
+		<m:abs/>
+		<m:apply>
+		  <m:mo>Δ</m:mo>
+		  <m:ci><m:msub>
+		      <m:mi>τ</m:mi>
+		      <m:mi>g</m:mi>
+		    </m:msub></m:ci>
+		</m:apply>
+	      </m:apply>
+	      <m:cn>9</m:cn>
+	    </m:apply>
+	  </m:apply>
+	</m:math> defines the maximum allowable deviation from a group
+        delay of 9 in the pass-band.  The parameter
+        <m:math>
+          <m:ci><m:msub>
+	      <m:mi>τ</m:mi>
+	      <m:mn>g</m:mn>
+	    </m:msub></m:ci>
+	</m:math> is the <emphasis>group delay</emphasis> of the
+        system and is defined by the following:
+      </para>
+
+      <equation id="eq1">
+        <m:math>
+	  <m:apply>
+	    <m:eq/>
+	    <m:apply>
+	      <m:ci><m:msub>
+		  <m:mi>τ</m:mi>
+		  <m:mi>g</m:mi>
+		</m:msub></m:ci>
+	      <m:ci>ω</m:ci>
+	    </m:apply>
+	    <m:apply>
+	      <m:minus/>
+	      <m:apply>
+		<m:diff/>
+		<m:bvar>
+		  <m:ci>x</m:ci>
+		</m:bvar>
+		<m:apply>
+		  <m:arg/>
+		  <m:apply>
+		    <m:ci>H</m:ci>
+		    <m:ci>ω</m:ci>
+		  </m:apply>
+		</m:apply>
+	      </m:apply>
+	    </m:apply>
+	  </m:apply>
+	</m:math>
+      </equation>
+
+      <para id="p2a">
+        The parameter 
+        <m:math>
+	  <m:apply>
+	    <m:mo>Δ</m:mo>
+	    <m:ci><m:msub>
+		<m:mi>τ</m:mi>
+		<m:mi>g</m:mi>
+	      </m:msub></m:ci>
+	  </m:apply>
+        </m:math> is defined as: 
+      </para>
+      
+      <equation id="eq2a">
+        <m:math>
+          <m:apply>
+            <m:eq/>
+            <m:apply>
+	      <m:apply>
+		<m:mo>Δ</m:mo>
+		<m:ci><m:msub>
+                    <m:mi>τ</m:mi>
+                    <m:mi>g</m:mi>
+                  </m:msub></m:ci>
+	      </m:apply>
+              <m:ci>ω</m:ci>
+            </m:apply>
+            <m:apply>
+	      <m:minus/>
+	      <m:apply>
+		<m:max/>
+		<m:condition>
+		  <m:apply>
+		    <m:leq/>
+		    <m:apply>
+		      <m:abs/>
+		      <m:ci>ω</m:ci>
+		    </m:apply>
+		    <m:ci><m:msub>
+			<m:mi>ω</m:mi>
+			<m:mi>p</m:mi>
+		      </m:msub></m:ci>
+		  </m:apply>
+		</m:condition>
+		<m:apply>
+		  <m:ci><m:msub>
+		      <m:mi>τ</m:mi>
+		      <m:mi>g</m:mi>
+		    </m:msub></m:ci>
+		  <m:ci>ω</m:ci>
+		</m:apply>
+	      </m:apply>
+	      <m:apply>
+		<m:min/>
+		<m:condition>
+		  <m:apply>
+		    <m:leq/>
+		    <m:apply>
+		      <m:abs/>
+		      <m:ci>ω</m:ci>
+		    </m:apply>
+		    <m:ci><m:msub>
+			<m:mi>ω</m:mi>
+			<m:mi>p</m:mi>
+		      </m:msub></m:ci>
+		  </m:apply>
+		</m:condition>
+		<m:apply>
+		  <m:ci><m:msub>
+		      <m:mi>τ</m:mi>
+		      <m:mi>g</m:mi>
+		    </m:msub></m:ci>
+		  <m:ci>ω</m:ci>
+		</m:apply>
+	      </m:apply>
+	    </m:apply>
+	  </m:apply>
+	</m:math>
+      </equation>
+
+      <para id="p2">
+        Thus, 
+        <m:math>
+	  <m:apply>
+	    <m:forall/>
+	    <m:bvar>
+	      <m:ci>f</m:ci>
+	    </m:bvar>
+	    <m:condition>
+	      <m:apply>
+		<m:leq/>
+		<m:apply>
+		  <m:abs/>
+		  <m:ci>f</m:ci>
+		</m:apply>
+		<m:ci><m:msub>
+		    <m:mi>f</m:mi>
+		    <m:mi>p</m:mi>
+		  </m:msub></m:ci>
+	      </m:apply>
+	    </m:condition>
+	    <m:apply>
+	      <m:leq/>
+	      <m:apply>
+		<m:abs/>
+		<m:apply>
+		  <m:mo>Δ</m:mo>
+		  <m:ci><m:msub>
+		      <m:mi>τ</m:mi>
+		      <m:mi>g</m:mi>
+		    </m:msub></m:ci>
+		</m:apply>
+	      </m:apply>
+	      <m:cn>9</m:cn>
+	    </m:apply>
+	  </m:apply>
+	</m:math> states that the group delay is not allowed to
+        deviate more than 9 samples in the pass-band.  A system that
+        has constant group delay will have a phase response that is
+        generalized linear-phase.  Thus, deviation from constant group
+        delay is a measure of the deviation of the phase response from
+        linear. The MATLAB command <code>grpdelay</code> computes the
+        group delay of a system as a function of frequency given the
+        filter coefficients
+        <m:math>
+          <m:ci>a</m:ci>
+        </m:math> and
+        <m:math>
+          <m:ci>b</m:ci>
+        </m:math>.  
+	
+        <note type="Question" id="idp864000"><label>Question</label>
+        For which of the three techniques discussed in <link document="m11057">filtering techniques</link> must we verfiy
+        explicitly that the group delay specification is met?  All of
+        them, some of them, or none of them?
+        </note>
+
+        <note type="Question" id="idp865696"><label>Question</label>
+         Why do we only specify the filter coefficients for only the
+         positive frequencies?  What are we assuming?  What does this
+         imply about the coefficients
+          <m:math>
+	    <m:ci>a</m:ci>
+	  </m:math> and
+	  <m:math>
+	    <m:ci>b</m:ci>
+	  </m:math> of the low-pass filter?
+        </note>
+      </para>
+
+    </section>
+  </content>
+  
+</document>

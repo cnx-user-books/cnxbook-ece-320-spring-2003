@@ -1,0 +1,156 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Low-Pass Filter Implementation: Grading</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>28e9c2c3-a914-49d2-8c04-22b1c9acddc5</md:uuid>
+</metadata>
+
+
+
+  <content>
+    <section id="cycle_count">
+      <title>Obtaining a Cycle Count</title>
+      
+      <para id="p1">
+        Obtaining a cycle count for a given section of code is easily
+        accomplished with the aid of Code Composer.  Here is the
+        procedure for obtaining a cycle count:
+      </para>
+
+      <list id="l1" list-type="enumerated">
+        <item>
+          Load the <code>.out</code> file of the program you wish to
+          profile into Code Composer.
+        </item>
+
+        <item>
+          Set a breakpoint at the beginning of the section of code
+          that you want to profile.  This can be easily done by
+          right-clicking on the line of code beginning the section and
+          choosing "Toggle breakpoint" from the list of options.
+        </item>
+        
+        <item>
+          Set a breakpoint at the end of the the section of code that
+          you want to profile.
+        </item>
+
+        <item>
+          Open the "Profiler" menu in Code Composer.  Choose "View
+          Clock."  A window should open at the bottom of the Code
+          Composer window that indicates the current value of the
+          cycle counter.
+        </item>
+        
+        <item>
+          Again, open the "Profiler" menu in Code Composer and choose
+          "Enable Clock."
+        </item>
+
+        <item>
+          Choose "Run" from the "Debug" menu to execute your code.
+          Execution will halt at the first breakpoint.  Double-click
+          the cycle counter to reset its value to zero (double click
+          the number next to "Clock =").
+        </item>
+
+        <item>
+          Again, choose "Run" from the "Debug" menu to continue
+          execution of your code.  Execution will halt at the second
+          breakpoint and the cycle counter will display the number of
+          CPU cycles that were needed to execute the section of code
+          delimited by the breakpoints.
+        </item>
+      </list>
+    </section>
+
+    <section id="grading">
+      <title>Grading Information</title>
+
+      <para id="p2">
+        This is a two week lab.  Your prelab is due a week after the
+        quiz for Lab 4 and the quizzing occurs two weeks after the
+        quiz for Lab 4.
+      </para>
+
+      <para id="p3">
+        The following details how the 10 points for the lab will be
+        assigned:
+      </para>
+
+      <list id="l2" list-type="bulleted">
+        <item>
+          1 point: Prelab.  You must answer the prelab questions for
+          two filtering techniques in <link document="m11057">Filtering Techniques</link>.  You must
+          fully simulate one filtering technique in MATLAB and
+          demonstrate that the system will meet the specifications as
+          given in the <link document="m11056">filter
+          specification</link>.  Finite precision effects such as
+          coefficient quantization must be modeled in your simulation.
+          You must provide the response of your simulated system to
+          appropriate test inputs.
+        </item>
+
+        <item>
+          2 points: Working code.  Code that does not meet the
+          specification is not considered working code.  You must be
+          prepared to demonstrate that your code meets the
+          specification by showing the system response to a frequency
+          swept sine input.  We will check that the ripple
+          specifications have been met in the pass-band and the
+          stop-band.  We will also check the for the locations of the
+          pass-band and stop-band edges to make sure that the width of
+          the transition band is met.  We will also check to see that
+          the phase constraint given in the specification is met.  We
+          will also check to ensure that you have scaled the input
+          signal appropriately so that clipping does not occur at the
+          output for any frequency.  Additionally, we will check to
+          make sure that you do not scale the input too
+          conservatively, specifically, a 1 V amplitude sinusoidal
+          input is not allowed to drop below 0.5 V in amplitude at the
+          output for all frequencies in the pass-band.
+
+        </item>
+
+        <item>
+          2 points: Oral quiz.
+        </item>
+
+        <item>
+           5 points: Optimization.  These points will be assigned
+           based on your cycle count.  You will be judged relative to
+           your peers.  Code that does not meet the specification will
+           be penalized.  After all the cycle counts have been
+           collected, we will order them for scoring in two ways.
+           First, the cycle counts will be ordered globally over the
+           whole class.  The groups with the lowest numbered cycle
+           counts will be given the maximum number of points and the
+           groups with the highest numbered cycle counts will be given
+           the minimum number of points.  The second ordering will be
+           done locally relative to which of the three filtering
+           techniques the groups have picked.  The groups using the
+           same filtering technique will be ordered by cycle count,
+           with the groups with the lowest cycle counts receiving
+           maximum points and the groups with the highest cycle counts
+           receiving minimum points.  3 points will be assigned for
+           the global ordering of groups and 2 points for the local
+           ordering with respect to filtering technique of groups.
+        </item>
+      </list>
+    </section>
+
+    <section id="pizza">
+      <title>Pizza Competition</title>
+      
+      <para id="p4">
+        Your final assembly code and/or C source code for the pizza
+        competition must be emailed to <link url="mailto:ece320@ews.uiuc.edu">ece320@ews.uiuc.edu</link> no
+        later than 11:59 PM on Monday, March 17.  However, your
+        optimization grade will be assigned based on the code turned
+        in during your assigned lab section and is subject to the
+        usual polices for late code.
+      </para>
+
+    </section>
+
+  </content>
+  
+</document>

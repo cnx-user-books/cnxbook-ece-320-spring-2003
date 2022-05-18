@@ -1,0 +1,467 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Multirate Filtering: Implementation on TI TMS320C54x (ECE 320 specific)</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>2722d137-9910-4004-a575-a5d9e1076212</md:uuid>
+</metadata>
+
+
+  <content>
+
+    <section id="sec1">
+      <title>Implementation</title>
+
+      <para id="para1">
+        As this is your first experience with the C environment, most
+        of the programming for the assignment is to be done directly
+        in assembly.  A C skeleton will provide access to input
+        samples and a way to output samples. From the C skeleton, an
+        assembly module for implementing the complete multirate system
+        (for a single sample) is called.  In the assembly module, the
+        downsampling and upsampling blocks are implemented by using a
+        loop or counter to determine which samples to keep and when to
+        insert zeros.
+      </para>
+
+      <para id="para2">
+        As there was a core file for working in the assembly
+        environment (Labs 0-2), there is a core file for the C
+        environment (<code>V:\ece320\54x\dspclib\core.asm</code>)
+        which handles the interrupts from the CODEC (A/D and D/A) and
+        the serial port.  Here, we will describe the important aspects
+        of the core code necessary to complete the assignment.  The
+        complete documentation on the core code developed for the C
+        environment will be made available soon.
+      </para>
+
+      <section id="sec1sub1">
+        <title>C Skeleton</title>
+
+        <para id="para3">
+          Let's examine the following C main program <link url="http://cnx.rice.edu/modules/m10617/latest/lab3main.c"><code>lab3main.c</code></link>
+          which calls assembly FIR filter functions
+          <code>init_filter</code> and <code>filter</code>.
+        </para>
+
+        <code display="block" id="block1">
+          
+	  1    #include "v:/ece320/54x/dspclib/core.h"  /* Declarations for core file */
+	  2    void init_filter(void);			  /* Prototypes for assembly functions */
+	  3    int filter(int sample);
+	  4    extern int dec_rate;			  /* Default decimation rate is 4 */
+	  5 
+	  6    main()
+	  7    {
+	  8        int *Rcvptr,*Xmitptr;                 /* pointers to Xmit &amp; Rcv Bufs   */
+	  9        int i, sample1, sample2; 
+	  10    
+	  11        init_filter();			  /* Initialize the filter */
+	  12        
+	  13        while( 1 )
+	  14        {   
+	  15            /* Wait for a new block of samples */
+	  16            WaitAudio(&amp;Rcvptr,&amp;Xmitptr);
+	  17    	
+	  18            /* Process a block of samples */
+	  19            for( i = 0; i &lt; BlockLen; i ++ )
+	  20            {
+	  21                sample1 = Rcvptr[4*i];		/* Ch1 input sample */
+	  22                sample2 = Rcvptr[4*i+2];            /* Ch2 input sample  */
+	  23            
+	  24                Xmitptr[6*i]   = sample1;		/* First output is input */
+	  25                Xmitptr[6*i+1] = filter(sample1);	/* Secound output is result */
+	  26            }        
+	  27
+	  28            i = SerialRX();  	/* Check serial port */
+	  29            if( i &gt; 0 )
+	  30              dec_rate = i;	/* Save new decimation rate if we got it */
+	  31        }    
+	  32    }
+          
+        </code>
+
+        <para id="para4">
+          In the main program, an infinite loop operates over the
+          input samples accessed by the pointer <code>Rcvptr</code>
+          and writes the output samples via the pointer
+          <code>Xmitptr</code>.  In C, pointers may be used as array
+          names so that <code>Xmitptr[0]</code> is the first word
+          pointed to by <code>Xmitptr</code>.  The function
+          <code>WaitAudio</code> is a assembly function in the core
+          code which handles the CODEC interrupts.  It returns a block
+          of <code>BlockLen</code> samples and writes
+          <code>BlockLen</code> samples to each of the six channels.
+          As in the assembly core, the input samples are not in
+          consecutive order.  The right and left inputs are offset
+          from <code>Rcvptr</code> respectively by
+          <m:math>
+            <m:apply>
+              <m:times/>
+	      <m:cn>4</m:cn>
+	      <m:ci>i</m:ci>
+            </m:apply>
+          </m:math> and
+          <m:math>
+            <m:apply>
+              <m:plus/>
+	      <m:apply>
+		<m:times/>
+		<m:cn>4</m:cn>
+		<m:ci>i</m:ci>
+	      </m:apply>
+	      <m:cn>2</m:cn>
+            </m:apply>
+          </m:math>,
+          <m:math>
+            <m:apply>
+              <m:eq/>
+	      <m:ci>i</m:ci>
+	      <m:cn>0</m:cn>
+            </m:apply>
+          </m:math>, …,
+          <m:math>
+            <m:apply>
+              <m:minus/>
+	      <m:ci>BlockLen</m:ci>
+	      <m:cn>1</m:cn>
+            </m:apply>
+          </m:math>.  The six output channels are accessed
+          consecutively as offsets from <code>Xmitptr</code>.
+        </para>
+      </section>
+
+      <section id="sub1sec2">
+        <title>Assembly Functions</title>
+
+        <para id="para5">
+          Let's examine the calls to the assembly functions
+          <code>init_filter</code> and <code>filter</code>.  The
+          assembly file containing these functions is
+          <code>v:\ece320\54x\dspclib\lab3filt.asm</code>
+        </para>
+
+        <code display="block" id="block2">
+          
+	  1    ; Lab 3 assembly module
+	  2                        
+	  3          .copy "v:\ece320\54x\dspclib\core.inc"
+	  4    	                                ; Useful macros for C interfacing
+	  5            
+	  6          .global _dec_rate		; Decimation rate - in lab3main.c
+	  7          .global _filter			; Filter code in this file
+	  8          .global _init_filter
+	  9
+	  10    FIR_len	.set	13  
+	  11
+	  12          .sect ".data"
+	  13
+	  14          .align 16			; Align to a multiple of 16
+	  15    firstate
+	  16          .space 16*13			; Allocate 13 words of storage for
+	  17					; filter state.	
+	  18          .align 16
+	  19    coef	.copy "coef1.asm" 
+	  20
+	  21    stateptr .word 0
+	  22
+	  23    _dec_rate .word 4
+	  24
+	  25          .sect ".text"    
+	  26	
+	  27    _init_filter 		; need the leading _ for a C name.
+	  28          ENTER_ASM
+	  29	
+	  30          stm	#firstate, AR3
+	  31          mvmd	AR3, stateptr		; Save AR3
+	  32	
+	  33          LEAVE_ASM
+	  34          ret
+	  35	
+	  36    _filter                                          
+	  37          ENTER_ASM
+	  38          ; Input in low part of A accumulator
+	  39	
+	  40          mvdm	stateptr, AR3		; Restore state pointer
+	  41	
+	  42          stm 	#FIR_len,BK		; initialize circular buffer length
+	  43          stm 	#coef,AR2    		; initialize coefficient pointer
+	  44          stm 	#1,AR0			; initialize AR0 for pointer increment
+	  45
+	  46          stl   	A,*AR3+%		; store current input into state buffer
+	  47          rptz  	A,(FIR_len-1)		; clear A and repeat
+	  48          mac   	*AR2+0%,*AR3+0%,A	; multiply coefficient by state &amp; accumulate
+	  49
+	  50          rnd	A			; Round off value in 'a' to 16 bits
+	  51	
+	  52          sfta 	a,-16			; Shift output to low part of accumulator
+	  53        
+	  54          mvmd	AR3, stateptr		; Save state pointer
+	  55        
+	  56          ; Output in low part of A accumulator
+	  57
+	  58          LEAVE_ASM
+	  59          ret	                                        
+          
+        </code>
+
+        <para id="para6">
+          The assembly file contains two main parts, the data section
+          starting with <code>.sect ".data"</code> and the program
+          section starting with <code>.sect ".text"</code>.  Every
+          function and variable accessed in C must be preceded by a
+          single underscore <code>_</code> in assembly and a
+          <code>.global _name</code> must be placed in the assembly
+          file for linking.  In this example, <code>filter</code> is
+          an assembly function called from the C program with a label
+          <code>_filter</code> in the text portion of the assembly
+          file and a <code>.global _filter</code> declaration.  In
+          each assembly function, the macro <code>ENTER_ASM</code> is
+          called upon entering and <code>LEAVE_ASM</code> is called
+          upon exiting.  These macros are defined in
+          <code>v:\ece320\54x\dspclib\core.inc</code>.  The
+          <code>ENTER_ASM</code> macro saves the status registers and
+          <code>AR1</code>, <code>AR6</code>, and <code>AR7</code>
+          when entering a function as required by the register use
+          conventions.  The <code>ENTER_ASM</code> macro also sets the
+          status registers to the assembly conventions we have been
+          using (<foreign>i.e</foreign>, <code>FRCT</code>=1 for
+          fractional arithmetic and <code>CPL</code>=0 for
+          <code>DP</code> referenced addressing).  The
+          <code>LEAVE_ASM</code> macro just restores the saved
+          registers.
+        </para>
+      </section>
+
+      <section id="sec1sub3">
+        <title>Parameter Passing</title>
+
+        <para id="para7">
+          The parameter passing convention between assembly and C is
+          simple for single input, single output assembly functions.
+          From a C program, the input to an assembly program is in the
+          low part of accumulator <code>A</code> with the output
+          returned in the same place.  In this example, the function
+          <code>filter</code> takes the right input sample from
+          <code>A</code> and returns a single output in <code>A</code>
+          (note the left shift by 16 to put the result in the low part
+          of <code>A</code>).  When more than one parameter is passed
+          to an assembly function, the parameters are passed on the
+          stack (see the core file description for more information).
+          We suggest that you avoid passing or returning more than one
+          parameter.  Instead, use global memory addresses to pass in
+          or return more than one parameter.  Another alternative is
+          to pass a pointer to the start of a buffer intended for
+          passing and returning parameters.
+        </para>
+      </section>
+
+      <section id="sec1sub4">
+        <title>Registers Modified</title>
+
+        <para id="para8">
+          When entering and leaving an assembly function, the
+          <code>ENTER_ASM</code> and <code>LEAVE_ASM</code> macros
+          ensure that certain registers are saved and restored.  Since
+          the C program may use any and all registers, the state of a
+          register cannot be expected to remain the same between calls
+          to assembly function(s).  <emphasis>Therefore, any
+          information that needs to be preserved across calls to an
+          assembly function must be saved to memory!</emphasis> In
+          this example, <code>stateptr</code> keeps track of the
+          location of the current sample in the circular buffer
+          <code>firstate</code>.  Why don't we need to keep track of
+          the location of the coefficient pointer (<code>AR2</code>
+          in this example) after every sample?
+        </para>
+      </section>
+
+      <section id="sec1sub5">
+        <title>Compiling and Linking</title>
+
+        <para id="para9">
+          A working program can be produced by compiling the C code
+          and linking assembly modules and the core module.  The
+          compiler translates C code to a relocatable assembly form.
+          The linker assigns physical addresses on the DSP to the
+          relocatable data and code segments, resolves
+          <code>.global</code> references and links runtime libraries.
+        </para>
+
+        <para id="para10">
+          The procedure for compiling C code and linking assembly
+          modules has been automated for you in the batch file
+          <code>v:\ece320\54x\dsptools\C_ASM.bat</code>.  Copy the
+          files <code>lab3main.c</code>, and <code>lab3filt.asm</code>
+          from the <code>v:\ece320\54x\dspclib\</code> directory into
+          your own directory on the <code>W:</code> drive.  Using
+          Matlab, write the coefficients you created in the prelab
+          into a <code>coef1.asm</code> file.  Then, type <code>c_asm
+          lab3main lab3filt</code> to produce a
+          <code>lab3main.out</code> file to be loaded onto the DSP.
+          Load the output file onto the DSP as usual and check that is
+          the FIR filter you designed.
+        </para>
+      </section>
+
+      <section id="sec1sub6">
+        <title>Cascade of FIR1 and FIR2</title>
+
+        <para id="para11">
+          Modify the <code>lab3filt.asm</code> assembly module to
+          implement a cascade of filters FIR1 and FIR2.  Note that
+          both <code>_filter</code> and <code>_init_filter</code> will
+          need to be modified.  Compile and link the new assembly
+          module and confirm it has the frequency response which you
+          expect from cascading FIR1 and FIR2.
+        </para>
+      </section>
+
+      <section id="sec1sub7">
+        <title>Complete Multirate System</title>
+
+        <para id="para12">
+          Once you have the cascaded system working, implement the
+          multirate system composed of the three FIR filters by
+          modifying the assembly modules in <code>lab3filt.asm</code>.
+          In order to implement the sample rate converters, you will
+          need to use a counter or a loop.  <emphasis>The upsampling
+          block and downsampling block are not implemented as seperate
+          sections of code.</emphasis> Your counter or loop will
+          determine when the decimated rate processing is to occur as
+          well as when to insert zeros into FIR3 to implement the
+          zero-filling up-sampler.
+        </para>
+
+        <para id="para13">
+          Some instructions that may be useful for implementing your
+          multirate structure are the <code>addm</code> (add to
+          memory) and <code>bc</code> (branch conditional)
+          instructions. You may also find the <code>banz</code>
+          (branch on auxiliary register not zero) instruction useful,
+          depending on how you implement your code. <emphasis>As the
+          counter is state information that needs to be preserved
+          between calls to <code>filter</code>, the counter must be
+          saved in memory.</emphasis>
+        </para>
+
+        <para id="para14">
+          In order to experiment with multirate effects in your
+          system, make the downsampling factor 
+	  (<m:math>
+            <m:apply>
+              <m:eq/>
+              <m:ci>D</m:ci>
+              <m:ci>U</m:ci>
+            </m:apply>
+          </m:math>) a constant which can be changed easily in your
+          code.  Is there a critical 
+	  (<m:math>
+            <m:apply>
+              <m:eq/>
+              <m:ci>D</m:ci>
+              <m:ci>U</m:ci>
+            </m:apply>
+          </m:math>) associated with this system above which aliasing
+          occurs?
+        </para>
+
+        <para id="para15">
+          It will be useful both for debugging and for experimentation
+          to show the output of your system at various points in the
+          block diagram.  By modifying the C code in
+          <code>lab3main.c</code> and the assembly modules in
+          <code>lab3filt.asm</code>, send the following sequences to
+          the DSP output
+
+          <list id="list2" list-type="bulleted">
+            <item>output of FIR1</item>
+            <item>input to FIR2 (after downsampling)</item>
+            <item>input to FIR3 (after upsampling)</item>
+          </list>
+          You will have to pass these samples to the main C program by
+          storing them in memory locations as described in <link target-id="sec1sub3"/>.  Note that the input to FIR2 is at the
+          downsampled rate.
+        </para>
+      </section>
+
+      <section id="sec1sub8">
+        <title>Grading and Oral Quiz</title>
+        <para id="para16">
+          For the quiz, you should be prepared to change the
+          decimation rate upon request, and explain the effects of
+          changing the decimation rate on the system's output.
+        </para>
+
+        <para id="para17">
+          As usual, your grade will be split up into three sections:
+          <list id="list3" list-type="bulleted">
+            <item> 1 point: Prelab</item> 
+	    <item> 4 points: Code (Code which is complete and working
+            at the beginning of the lab period gets full
+            credit.)</item> 
+	    <item> 5 points: Oral Quiz</item>
+          </list>
+
+          The oral quiz may cover various problems in multirate
+          sampling theory, as well as the operation of your code
+          itself and details about the instructions you've used in
+          your code. Be prepared to explain, in detail, the operation
+          of all of your code, even if your lab partner wrote it!  You
+          may also be asked to make changes to your code and to
+          predict, and explain, the effects of these changes.
+        </para>
+      </section>
+
+      <section id="sec1sub9">
+        <title>Extra Credit: 1 point</title>
+        <para id="para18">
+          One of the main benefits of multirate systems is efficiency.
+          Because of downsampling, the output of FIR1 is used only one
+          of
+          <m:math>
+            <m:ci>D</m:ci>
+	  </m:math> times.  Make your assembly module more efficient
+          by using this fact.
+        </para>
+
+        <para id="para19">
+          Similarly, at the input of FIR3, 
+          <m:math>
+            <m:apply>
+              <m:minus/>
+              <m:ci>D</m:ci>
+              <m:cn>1</m:cn>
+            </m:apply>
+          </m:math> of every 
+          <m:math>
+            <m:ci>D</m:ci>
+	  </m:math> samples is zero.  So, for a fixed downsampling
+          factor
+          <m:math>
+            <m:ci>D</m:ci>
+	  </m:math>, it is possible to make use of this fact to create
+          <m:math>
+            <m:ci>D</m:ci>
+	  </m:math> different filters (each a subset of the
+          coefficients of FIR3) to be used at the
+          <m:math>
+            <m:ci>D</m:ci>
+	  </m:math> time instances.  This technique is referred to as
+          polyphase filtering and can be found in most modern DSP
+          textbooks.  These filters are more efficient as the sum of
+          the lengths of the filters is equal to the length of FIR3.
+          Apply this fact for
+          <m:math>
+            <m:apply>
+              <m:eq/>
+              <m:ci>D</m:ci>
+              <m:cn>4</m:cn>
+            </m:apply>
+          </m:math>.
+          
+        </para>
+      </section>
+
+    </section>
+
+  </content>
+  
+</document>

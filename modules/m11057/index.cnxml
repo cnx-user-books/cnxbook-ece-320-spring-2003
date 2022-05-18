@@ -1,0 +1,678 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Low-Pass Filter Implementation: Prelab</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>740b0b57-3779-4b36-b052-e0cca3b4b1bb</md:uuid>
+</metadata>
+
+
+
+  <content>
+    <section id="iir">
+      <title>IIR Filter Design Methods</title>
+
+      <section id="iir_overview">
+        <title>Overview</title>
+        
+        <para id="p1">
+          Implementing the narrow-band LPF using an IIR filter is
+          probably the most difficult option to design but the most
+          straightforward to implement.  One reason for the design
+          difficulty stems from the fact that in order to get such a
+          sharp response poles close to the unit circle are needed.
+          These poles can then drift outside the unit circle and the
+          system can then become unstable when finite precision
+          effects are added.  Also, perfectly linear phase (constant
+          group delay) cannot be realized using IIR filtering.
+        </para>
+
+        <para id="p2"> 
+          There are several approaches to designing an approximately
+          linear phase IIR filter.  For example, an IIR filter could
+          be run on blocks of samples in both the forward and reverse
+          direction and the results of each block added together;
+          using the filter in both directions would cancel the
+          nonlinear phase response of the filter.  Also, iterative
+          design methods exist to design filters that simultaneously
+          minimize errors in magnitude and group delay.  Yet another
+          approach is to design an IIR filter which approximates the
+          desired magnitude response (e.g., an elliptic filter using
+          the <code>ellip</code> command in MATLAB) and then
+          design an IIR all-pass filter which compensates for the
+          nonlinear phase.  This last approach is the one we will
+          examine here.
+        </para>
+      </section>
+
+      <section id="iir_fdtoolkit">
+        <title>MATLAB Filter Design Toolbox</title>
+
+        <para id="p3">
+          The MATLAB Filter Design (FD) Toolbox contains algorithms
+          used for optimal or near optimal design of filters subject
+          to various constraints.  You can view a description of the
+          toolbox and the functions it contains at this <link url="http://www.mathworks.com/access/helpdesk/help/toolbox/filterdesign/filterdesign.shtml">link</link>.
+          The FD Toolbox will be installed on the white Dell machine
+          nearest the door in the ECE 320 lab.
+        </para>
+      </section>
+
+
+      <section id="iir_usingkit">
+        <title>Using the Filter Design Toolbox</title>
+        
+        <para id="p4">
+          Although it is possible to design a very good LPF magnitude
+          response using an elliptic filter, we do not have the
+          advantage with the <code>ellip</code> command of
+          being able to constrain the poles away from the unit circle
+          to prevent instability.  Fortunately, the FD Toolbox
+          provides a command called <code>iirlpnormc</code>
+          which allows us to keep the poles within a circle of a
+          specified radius.  Note that this command implements a
+          least-<m:math display="inline"><m:mi>p</m:mi></m:math>'th
+          algorithm.  The term least-<m:math display="inline"><m:mi>p</m:mi></m:math>'th signifies that
+          the algorithm attempts to minimize a <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mi>p</m:mi></m:msub></m:math>-norm
+          error.  In the case of the magnitude response, the <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mi>p</m:mi></m:msub></m:math>-norm
+          error is given as
+        </para>
+
+
+        <equation id="eq1">
+          <m:math>
+            <m:reln>
+              <m:eq/>
+              <m:msub>
+                <m:apply>
+                  <m:abs/>
+                  <m:mi>H</m:mi>
+                </m:apply>
+                <m:mi>p</m:mi>
+              </m:msub>
+              <m:msup>
+                <m:mrow>
+                  <m:mfrac>
+                    <m:mn>1</m:mn>
+                    <m:mi>2π</m:mi>
+                  </m:mfrac>
+                  <m:apply>
+                    <m:int/>
+                    <m:bvar><m:ci>ω</m:ci></m:bvar>
+                    <m:lowlimit><m:cn>-π</m:cn></m:lowlimit>
+                    <m:uplimit><m:ci>π</m:ci></m:uplimit>
+                    <m:mrow>
+                      <m:msup>
+                        <m:apply>
+                          <m:abs/>
+                          <m:mrow>
+                            <m:apply>
+                              <m:ci type="fn">H</m:ci>
+                              <m:ci>ω</m:ci>
+                            </m:apply>
+                            <m:mo>-</m:mo>
+                            <m:apply>
+                              <m:ci type="fn">
+                                <m:msub>
+                                  <m:mi>H</m:mi>
+                                  <m:mi>d</m:mi>
+                                </m:msub>
+                              </m:ci>
+                              <m:ci>ω</m:ci>
+                            </m:apply>
+                          </m:mrow>
+                        </m:apply>
+                        <m:mi>p</m:mi>
+                      </m:msup>
+                      <m:apply>
+                        <m:ci type="fn">
+                          <m:mi>W</m:mi>
+                        </m:ci>
+                        <m:ci>ω</m:ci>
+                      </m:apply>
+                    </m:mrow>
+                  </m:apply>
+                </m:mrow>
+                <m:mfrac>
+                  <m:mn>1</m:mn>
+                  <m:mi>p</m:mi>
+                </m:mfrac>
+              </m:msup>
+            </m:reln>
+          </m:math>
+        </equation>
+        
+        <para id="p5">
+          where <m:math display="inline"><m:mi>H</m:mi></m:math> is
+          the actual frequency response, <m:math display="inline"><m:msub><m:mi>H</m:mi><m:mi>d</m:mi></m:msub></m:math>
+          is the desired response, and <m:math display="inline"><m:mi>W</m:mi></m:math> is some weighting
+          function.  Most of the time the weighting function used is
+          one which equals 1 over the passband and stop-band and 0 in
+          the transition band.  The role of <m:math display="inline"><m:mi>W</m:mi></m:math> in the above
+          equation is similar to that used in FIR filter design
+          (<code>remez</code>).  The relative weights in the
+          stop-band and pass-band are set by <m:math display="inline"><m:mi>W</m:mi></m:math> and control the
+          relative magnitude of the ripples in these bands.  Note that
+          minimizing the <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mn>2</m:mn></m:msub></m:math>-norm
+          is equivalent to minimizing the RMS error in the magnitude.
+          In contrast, the <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mn>∞</m:mn></m:msub></m:math>-norm
+          is equivalent to minimizing the maximum error over the
+          frequencies of interest (why?).  In this lab we are
+          concerned with minimizing the <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mn>∞</m:mn></m:msub></m:math>-norm.
+          Of course, we cannot use infinity in any of our computations
+          so using a large number (e.g. 128) must suffice.
+        </para>
+
+        <para id="p6">
+          Once our magnitude response has been selected, we need to
+          perform group delay equalization to yield approximately
+          constant group delay.  This can be done using the
+          <code>iirgrpdelay</code> command in the FD Toolbox.
+          Again, note that a least-<m:math display="inline"><m:mi>p</m:mi></m:math>th algorithm is used
+          and that we can constrain the radius of the poles.  The
+          resulting all-pass filter can be connected in series with
+          the nonlinear phase low-pass filter created with
+          <code>iirlpnormc</code> to complete the entire system.
+        </para>
+
+        <para id="p7">
+          The FD Toolbox can also aid in analyzing quantization
+          effects.  We suggest using <code>FDATool</code>, a
+          convenient GUI for interacting with the FD Toolbox, to carry
+          out the analysis.  See the internet documentation for more
+          information on the functions available.  Of course, you may
+          choose to do this by scaling and rounding as you have done
+          in previous labs.  Note that even though MATLAB uses
+          high-precision arithmetic you may find that for long IIR
+          filters MATLAB has difficulty rendering frequency responses,
+          etc.  Thus, you may find it useful to design a filter that
+          has half the passband ripple, half the stop-band
+          attenuation, etc. and implement it twice in your code to
+          meet the specification.
+        </para>
+
+        <para id="p7a">
+          Note that <code>FDAtool</code> and the filter design
+          toolbox (<code>qfilt</code> function) can be used to
+          analyze quantization effects on various filter structures,
+          as well as on the FFT. The quantization parameters can be
+          chosen and optimized in <code>FDAtool</code>. Also,
+          <code>FDAtool</code> (with or without the filter
+          design toolbox) can compute correct scaling to avoid
+          overflow.
+        </para>
+      </section>
+
+      <section id="iir_structures">
+        <title>Implementation Structures</title>
+
+        <para id="p8">
+          There are several ways to implement an IIR filter.  One of
+          these, a cascade of second-order systems, we have already
+          seen.  An alternative is placing these second-order sections
+          in parallel.  Another common implementation is a lattice
+          structure (see any standard DSP textbook), which tends to be
+          more resistant to finite word-length effects and may be more
+          computationally efficient.  To examine your choices, as a
+          starting point you should examine the MATLAB functions
+          listed as "Linear System Transformations" when you type help
+          signal at the command prompt (does not require the FD
+          Toolbox).
+        </para>
+
+        <para id="p9">
+          One of the difficult aspects of an IIR lattice is that
+          although the lattice coefficients are in the interval
+          (-1,1), the internals of the lattice can grow to be
+          prohibitively large.  To compensate for this, an m-file
+          (<code>latcfiltn.m</code>) has been created that
+          performs normalization after each lattice section to prevent
+          overflow.  If you are interested in exploring a lattice
+          implementation you may want to copy this m-file to your own
+          directory and modify it to suit your needs.  Note that there
+          are comments within the file to indicate where you might add
+          checks for overflow conditions.
+        </para>
+
+        <para id="p9a">
+          We suggest the use of <code>FDAtool</code> and
+          <code>dfilt</code> for structure transformations.
+          The function <code>dfilt</code> works also without
+          the Filter Design Toolbox. It is also useful for evaluating
+          cascade or parallel connections of sub-filters.  The MATLAB
+          command <code>fvtool</code> can be used to quickly
+          evaluate frequency response of various filter structures.
+        </para>
+
+        <para id="p9b">
+          Many extremely efficient structures for IIR filter
+          implementations exist.  Two of special note are the
+          following:
+        </para>
+
+        <list id="l9a">
+          <item>
+            All-pass filter implementations with
+            <m:math><m:mi>N</m:mi></m:math> multiplies for an order
+            <m:math><m:mi>N</m:mi></m:math> filter (instead of
+            <m:math><m:mi>2N</m:mi></m:math> multiplies for a cascade
+            realization).  These are structurally all-pass, meaning
+            that they remain all-pass even when their coefficients are
+            quantized.  (S. Mitra, Digital Signal Processing,
+            a Computer Based Approach, 2nd Ed., pp. 378-382).
+          </item>
+
+          <item>
+            Parallel all-pass Realization of IIR transfer functions
+            with <m:math><m:mi>N</m:mi></m:math> multiplies for an
+            <m:math><m:mi>N</m:mi></m:math>'th order
+            filter. (S. Mitra, Digital Signal Processing, a Computer
+            Based Approach, 2nd Ed., pp. 401-405, and Sec. 9.9,
+            pp. 629-633).
+          </item>
+
+        </list>
+      </section>
+
+      <section id="iir_questions">
+        <title>Questions</title>
+
+        <list id="l1" list-type="enumerated">
+          <item>Generate an elliptic LPF using the command:
+            
+            <code>
+              [b,a]=ellip(4,.5,10,.1);
+            </code>
+
+            Using MATLAB commands, generate a cascaded second-order
+            system implementation and a lattice implementation (don't
+            worry about normalization if you don't want) of this
+            system and compare their advantages and disadvantages -
+            especially as they relate to implementation on the C5400.
+          </item>
+
+          <item>
+            How close to the unit circle are the poles of the system
+            from question 1?  Does this concern you?  Explore how much
+            the poles moved in the 2 implementations of part 1.
+          </item>
+
+          <item>
+            Use the <code>grpdelay</code> command to view the
+            group delay for the filter in the passband.  Is it
+            approximately linear?
+          </item>
+
+          <item>
+            Why does minimizing the $L$-norm equate to minimizing the
+            <m:math display="inline"><m:msub><m:mi>L</m:mi><m:mn>∞</m:mn></m:msub></m:math>-norm
+            maximum error over a given frequency range?
+          </item>
+        </list>
+      </section>
+
+      <section id="iir_simulation">
+        <title>Simulation</title>
+        
+        <para id="p9z">
+          Simulate the IIR system in MATLAB.  Compute the response of
+          the system with appropriate test inputs.  Make sure to
+          include side-effects due to finite precision in your
+          simulation.
+        </para>
+      </section>
+    </section>
+
+    <section id="multistage">
+      <title>Multi-rate/Multi-stage</title>
+
+      <section id="multistage_reading">
+        <title>Reading Exercise</title>
+        
+        <para id="p10">
+          Read through the following resources:
+
+          <list id="l2">
+            <item>"Optimum FIR Digital Filter Implementations for
+            Decimation, Interpolation, and Narrow-Band Filtering," by
+            Crochiere and Rabiner.  This is colloquial paper on the
+            topic of multi-stage filter implementation.  The paper is
+              available <link url="http://www.ews.uiuc.edu/~ece320/crochiererabiner.pdf">here</link>.</item>
+
+            <item>Course notes on multi-stage filter implementation by
+            <link url="http://www.ee.binghamton.edu/fowler/">Prof. Mark
+            Fowler</link> from Binghamton University.  The notes are
+            available <link url="http://www.ews.uiuc.edu/~ece320/multistage.pdf">here</link>.</item>
+          </list>
+        </para>
+      </section>
+
+      <section id="multirate_design">
+        <title>Design Exercises</title>
+        
+        <para id="p11">
+          Given the filter specification given in the <link document="m11056" strength="3">filter specification</link>,
+          answer the following questions:
+
+          <list id="l3">
+            <item>What is the maximum decimation factor that can be used?</item>
+            
+            <item>What is the average number of MACs per input sample
+            that are required for a single stage
+            implementation?</item>
+            
+            <item>What are the appropriate decimation and
+            interpolation factors for a a two stage
+            implementation?</item>
+
+            <item>What are the appropriate pass-band and stop-band
+            frequencies and maximum ripple for the overall filter at
+            each stage?  Your answer will demonstrate that the use of
+            multiple filter stages along with multi-rate signal
+            processing can achieve a overall filter of lower order
+            than just a single stage filter.</item>
+
+            <item>Estimate the filter order for each stage.  We
+            recommend using the MATLAB command
+            <code>remezord</code>.  This algorithm frequently
+            underestimates the filter order needed, but gives you a
+            good starting point.  Verify that the filter
+            specifications are met, i.e. pass-band and stop-band
+            ripple and pass-band and stop-band band edge locations.
+            Do this by passing the arguments returned by
+            <code>remezord</code> to the MATLAB command
+            <code>remez</code>.  Observe the frequency
+            response of the system described by the filter
+            coefficients returned by \texttt{remez} using the MATLAB
+            command <code>freqz</code>.  If the specifications
+            are not met, increase the order of the filter until the
+            specifications are met.</item>
+
+            <item>Determine the average number of MACs per sample for
+            the two-stage implementation.  Which is more efficient,
+            the single stage approach or the multistage
+            approach?</item>
+          </list>
+        </para>
+      </section>
+
+      <section id="multistage_simulation">
+        <title>Matlab Simulation</title>
+      
+        <para id="p12">
+          Using your results from the previous part, simulate the
+          two-stage multi-rate filter in MATLAB. Plot the frequency
+          response of each stage's filter using
+          <code>freqz</code> and determine the overall
+          frequency response of your multi-rate system to verify that
+          it meets the specifications. Since there is not a command
+          for directly finding the frequency response plot of a
+          multi-rate system in MATLAB, you will have to be a bit
+          creative.
+        </para>
+      </section>
+
+      <section id="multirate_addition">
+        <title>Additional Questions (optional, but for your benefit)</title>
+        
+        <list id="l4">
+          <item>Does it make a difference in which order the two
+          decimations are done in a two-stage implementation?</item>
+
+          <item>Could / would you add additional stages? Why or why
+          not?</item>
+
+          <item>Are quantization effects more or less pronounced in
+          the multi-stage implementation compared to a direct
+          implementation? Why or why not?</item>
+        </list>
+      </section>
+    </section>
+
+    <section id="fourier">
+      <title>Fourier-Based Filtering Methods</title>
+      
+      <para id="p15">
+        It is possible to perform linear convolution quickly using the
+        FFT.  This idea allows for the efficient implementation of a
+        FIR filter when the number of filter coefficients and the
+        length of the input sequences are large.
+      </para>
+
+      <section id="fourier_questions">
+        <title>Questions</title>
+
+        <list id="l5">
+          <item>Read Lecture 49 of the ECE 310 Course Notes on "Block
+          Convolution."  This lecture provides an excellent overview
+          of two methods for efficiently performing convolution using
+          the FFT: "Overlap and Add" and "Overlap and Save."  For a
+          more in depth treatment of these methods, refer to
+          Discrete-Time Signal Processing by Alan Oppenheim and Ronald
+          Schafer.</item>
+
+          <item>Simulate both an (1) overlap and add and an (2)
+          overlap and save filtering implementation in MATLAB.  Your
+          simulations should work for any choice of an FIR filter.
+          The filter length M and block length L should be variable
+          parameters.</item>
+
+          <item>Verify that your simulated systems are working properly by
+          comparing their performance with a direct FIR
+          implementation.  Test using several FIR filter designs and
+          appropriate test inputs.</item>
+
+          <item>Derive expressions for the amount of computation (in
+          terms of multiply accumulates) required per input sample for
+          both the overlap and add and overlap and save
+          implementations.  Plot the computation per sample as a
+          function of the input block length (for a particular filter
+          size M) for both schemes.  Is there a value of M for which
+          the Direct FIR is always more efficient?  Derive an
+          expression for the optimal block size L in terms of the
+          filter length M for both implementations.</item>
+
+          <item>In the DSP implementation, the input sequence is
+          purely real.  The values of the imaginary components are all
+          set to zero.  We can speed up the implementations further by
+          exploiting the symmetry properties of the Fourier transform.
+          These properties are stated as follows:
+
+            <equation id="e3">
+              <m:math>
+                <m:reln>
+                  <m:eq/>
+                  <m:apply>
+                    <m:fn><m:mi>DFT</m:mi></m:fn>
+                    <m:apply>
+                      <m:mi>ℜ</m:mi>
+                      <m:apply>
+                        <m:fn><m:mi>x</m:mi></m:fn>
+                        <m:mi>n</m:mi>
+                      </m:apply>
+                    </m:apply>
+                  </m:apply>
+                  <m:apply>
+                    <m:fn><m:mi>Even</m:mi></m:fn>
+                    <m:apply>
+                      <m:fn><m:mi>X</m:mi></m:fn>
+                      <m:mi>ω</m:mi>
+                    </m:apply>
+                  </m:apply>
+                </m:reln>
+              </m:math>
+            </equation>
+
+            <equation id="e4">
+              <m:math>
+                <m:reln>
+                  <m:eq/>
+                  <m:apply>
+                    <m:fn><m:mi>DFT</m:mi></m:fn>
+                    <m:mrow>
+                      <m:mi>j</m:mi>
+                      <m:apply>
+                        <m:mi>ℑ</m:mi>
+                        <m:apply>
+                          <m:fn><m:mi>x</m:mi></m:fn>
+                          <m:mi>n</m:mi>
+                        </m:apply>
+                      </m:apply>
+                    </m:mrow>
+                  </m:apply>
+                  <m:apply>
+                    <m:fn><m:mi>Odd</m:mi></m:fn>
+                    <m:apply>
+                      <m:fn><m:mi>X</m:mi></m:fn>
+                      <m:mi>ω</m:mi>
+                    </m:apply>
+                  </m:apply>
+                </m:reln>
+              </m:math>
+            </equation>
+
+            Using these properties, determine how to get two FFT's for
+            the price of one.  Implement this scheme in MATLAB, and
+            verify that the operation is correct.
+          </item>
+          
+          <item>Design a FIR filter that meets the filter
+          specification given in the <link document="m11056" strength="3">filter specification</link>.  Lecture 38 of the
+          ECE 310 notes on "Parks-McClellan" might be a good reference
+          here.  Design an efficient implementation of this filter
+          using the methods you explored above.  The MATLAB commands
+          <code>remezord</code> and <code>remez</code>
+          may be of great help.  Simulate this implementation in
+          MATLAB, programming in such a way that you can easily
+          convert your MATLAB simulation to assembly.  Find the number
+          of computations per input for your method.
+          </item>
+
+          <item>
+            What are the benefits and trade-offs of using the
+            Fourier-based method in terms of accuracy of the filter
+            specification, finite precision errors, and computational
+            expense?  Compare with the IIR and multi-rate filter
+            implementations.
+          </item>
+        </list>
+
+        <para id="p16">
+          Be prepared to show all the necessary plots and MATLAB
+          simulations as well as answers to all of the questions posed
+          above to your T.A. as your prelab.
+        </para>
+      </section>
+
+      <section id="fourier_implementation">
+        <title>Implementation Issues</title>
+
+        <para id="p17">
+          Due to the limitations of the core file, it is not possible
+          to take in more than 64 input samples from the A/D converter
+          at a time (unless the core file is rewritten to accomplish
+          this task).  Therefore, when implementing a Fourier-based
+          filter, you should use the C skeleton from Lab 4 to perform
+          the FFT on a large block of samples.  All of your filtering
+          operations (i.e., the multiplications of DFT samples, the
+          additions of the overlap, the discarding of samples) and
+          function calls must be performed in assembly.  You will be
+          graded on the number of cycles per input sample based on the
+          portion of code in your assembly routine.
+        </para>
+
+        <para id="p18">
+          You should use the <code>fft.asm</code> routine
+          provided in Lab 4 to perform the forward and reverse FFT's.
+          You should study this file to determine how it works.  If
+          you need to change the length of the FFT, you will first
+          need to change the relevant parameters in your assembly file
+          (i.e., <code>N</code>,
+          <code>K_FFT_SIZE</code>,
+          <code>K_LOGN</code>, and other variables).  You will
+          also need to change the following parameters in the FFT
+          file:
+        </para>
+
+        <code display="block" id="list">
+          K_TWID_TBL_SIZE
+          K_TWID_IDX_3
+        </code>
+
+        <para id="p19">
+          <code>K_TWID_TBL_SIZE</code> is the size of the
+          twiddle tables (how long should these be for a given FFT
+          length?)  and <code>K_TWID_IDX_3</code> is the
+          amount by which the program increments through the twiddle
+          table during at the third stage of the FFT.  What is this
+          increment for a given <code>N</code>?  Is
+          <code>fft.asm</code> a decimation in time or
+          decimation in frequency algorithm?
+        </para>
+
+        <para id="p20">
+          You will also need a modified twiddle table when you change
+          the length of the FFT to use <code>fft.asm</code> as
+          written.  For a length 1024 FFT, the twiddle tables are
+          length 512 each.  <code>TWIDDLE1</code> is a table
+          of sine values from zero to <m:math display="inline"><m:mi>π</m:mi></m:math>, and
+          <code>TWIDDLE2</code> is a table of cosine values
+          from 
+          <m:math display="inline">
+            <m:mfrac>
+              <m:mi>π</m:mi>
+              <m:mn>2</m:mn>
+            </m:mfrac>
+          </m:math>
+          to 
+          <m:math display="inline">
+            <m:mfrac>
+              <m:mi>3π</m:mi>
+              <m:mn>2</m:mn>
+            </m:mfrac>
+          </m:math>
+          .  The support for the cosine and sine is different because
+          <code>fft.asm</code> code uses the fact that
+          <m:math>
+            <m:reln>
+              <m:eq/>
+              <m:apply>
+                <m:sin/>
+                <m:apply>
+                  <m:minus/>
+                  <m:mi>θ</m:mi>
+                </m:apply>
+              </m:apply>
+              <m:apply>
+                <m:minus/>
+                <m:apply>
+                  <m:sin/>
+                  <m:mi>θ</m:mi>
+                </m:apply>
+              </m:apply>
+            </m:reln>
+          </m:math>
+
+          when performing computations.  If you want a length 64 FFT,
+          you will need to ``decimate'' the twiddle table to length
+          32, or in other words, only keep one out of every 16 lines
+          in the twiddle tables and discard the rest.  We will provide
+          a MATLAB function, <code>edit_twiddle.m</code> for this
+          purpose.  The function call in this example would be:
+        </para>
+
+        <code display="block" id="c2">
+          edit_twiddle('TWIDDLE1','new_twiddle1',16)
+        </code>
+
+        <para id="p21">
+          You should verify that the new twiddle tables you generate
+          indeed have 32 elements.  To perform an inverse FFT, you can
+          use the standard FFT algorithm and then appropriately scale
+          and shift the outputs.  Lecture 43 of the ECE 310 notes on
+          the Discrete Fourier Transform suggests how this may be done
+          (Property 3 of ``Properties of the DFT'').
+        </para>
+      </section>
+
+    </section>
+  </content>
+  
+</document>

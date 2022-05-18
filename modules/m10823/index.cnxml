@@ -1,0 +1,222 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Core File: Accessing External Memory on TI TMS320C54x</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>4419dec3-cc82-4565-98e4-31063fd8dca6</md:uuid>
+</metadata>
+
+
+
+
+
+  <content>
+    <section id="sec1">
+      <title>Introduction</title>
+      <para id="para2">
+	The TI DSP evaluation boards you use have a large amount of
+	memory; in addition to the 32K words internal to the DSP,
+	there are another 256K words of memory installed on the EVM
+	board.  For many exercises, the data sets are small, and you
+	worked with only the on-chip memory of the DSP and were not
+	expected to consider how the use of memory impacted
+	performance.  However, the large delays often required in
+	audio processing, for example, require that many thousands of
+	samples be stored in memory. There is not enough memory on the
+	DSP microprocessor itself to store a second or more of samples
+	at a 44.1 kHz sample rate, so the off-chip memory must be
+	used.
+      </para>
+    </section>
+    <section id="section2">
+      <title>EVM Memory Maps</title>
+      <para id="para4">
+	As you have seen, the TI TMS320C54x DSP has two separate
+	memory spaces, called Program and Data.  Usually, Program
+	contains your assembled program, and Data contains data, but
+	sometimes it may be convenient or more efficient to violate
+	this convention.  (For instance, the <code>firs</code>
+	instruction requires filter coefficients in the Program
+	address space.)  The Data space is 64K long and is accessed
+	using the 16-bit auxiliary registers
+	(<code>ARx</code>). Although the Program space is normally
+	accessed using 16-bit literals stored in your program code,
+	the Program space is, in fact, significantly larger than 64K.
+	Using special "extended addressing" instructions, the TI DSP
+	can access up to 8192K-words of memory in the Program space.
+	The extended addressing instructions include far calls and
+	jumps that reset the full 23-bit program counter, as well as
+	accumulator-addressed data-transfer instructions.
+      </para>
+      <section id="sec3">
+	<title>Internal and external memory</title>
+	<para id="para5">
+	  In many exercises, it is possible to store program
+	  instructions and data entirely in the DSP's on-chip
+	  ("internal") memory. This internal memory has several
+	  advantages over off-chip ("external") memory: it is much
+	  faster (data stored can be accessed without delay), and
+	  multiple reads and writes can access the DSP's on-chip
+	  memory simultaneously. However, many applications (including
+	  the audio delay effect of <link document="m10480">Using
+	  External Memory</link>) require a data buffer too large to
+	  fit into the on-chip memory. For these large buffers, we
+	  must use the larger but slower external memory.
+	</para>
+	<para id="para6">
+	  When writing programs that require large amounts of memory,
+	  use the internal memory to hold your code, filter
+	  coefficients, and any small buffers you need.  External
+	  memory should be used for large buffers that you only access
+	  a few times per sample, like the delay buffer described in
+	  <link document="m10480">Audio Effects: Using
+	  External Memory</link>.
+	</para>
+      </section>
+      <section id="sec4">
+	<title>TMS320C549x DSP EVM memory maps</title>
+	<figure id="fig1">
+	  <media id="idp6558768" alt=""><image src="../../media/ram2.png" mime-type="image/png"/></media>
+	  <caption>DSP EVM memory maps</caption>
+	</figure>
+	<para id="para7">
+	  As these memory maps show, the EVM's Data address space is
+	  addressed fully by the 16-bit auxiliary registers
+	  (<code>ARx</code>) and address-extension words and the
+	  mapping of Data memory is not affected by the
+	  <code>OVLY</code> bit. However, because the Program memory
+	  space is much larger than can be addressed by the 16-bit
+	  addressing register or the 16-bit literals stored in the
+	  program, it is split up into 64K (16-bit) pages by the
+	  hardware. Normal instructions, such as <code>call</code>,
+	  <code>firs</code>, and <code>mvpd</code> accept only 16-bit
+	  addresses, and can therefore only address the current "page"
+	  (usually address in the form <code>00xxxxh</code>, which
+	  corresponds to the addresses the linker uses for your
+	  program's code). To access the full 23-bit address space,
+	  the DSP offers special accumulator-addressed load, store,
+	  and jump instructions.
+	</para>
+	<para id="para8">
+	  Further complicating matters is the fact that the
+	  <code>OVLY</code> bit affects the mapping of the Program
+	  memory space.  If you remember, before we load our DSP
+	  program, we have to change the <code>PMST</code> to
+	  <code>FFE0h</code>. We do this to set the <code>OVLY</code>
+	  bit in the <code>PMST</code>, which maps the internal memory
+	  into both the Program and Data spaces of the DSP.  If
+	  <code>OVLY</code> is 1, the internal memory appears in both
+	  the Data and Program memory address space at locations
+	  <code>0080h</code> to <code>07FFFh</code>. Therefore, with
+	  <code>OVLY</code> set, anything written into Data memory
+	  below <code>07FFFh</code> will overwrite a program stored in
+	  the same location. <footnote id="idp10486768">This is why the
+	  memory allocated for your program -
+	  <code>6000h</code>-<code>7FFFh</code> - does not overlap
+	  with any of the space allocated for the data
+	  segments.</footnote> In addition, copies of the internal memory
+	  also appear in the extended Program address space, occupying
+	  locations <code>0080h</code>-<code>7FFFh</code> of each
+	  page. Therefore, with <code>OVLY</code> set, any addresses
+	  to Program memory locations in the form of
+	  <code>xx0000h</code>-<code>xx7FFFh</code> reference internal
+	  memory.
+	</para>
+	<para id="para9">
+	  When <code>OVLY</code> is zero, internal memory is not
+	  mapped into the Program space at all; in this case, the
+	  Program space includes only external memory. In this mode,
+	  all 192K words of external Program RAM are accessible,
+	  although several wait states will be required for accessing
+	  each item of memory.  In the overlay mode, only addresses in
+	  the ranges of <code>08000h</code>-<code>0FF00h</code>,
+	  <code>1800h</code>-<code>1FFFFh</code>, and
+	  <code>28000h</code>-<code>2FFFFh</code> are available to
+	  store your data buffers; the remaining addresses are
+	  unmapped or map to the on-chip RAM.
+	</para>
+	<para id="para10">
+	  To escape this confusion and allow the full 192K-words of
+	  external Program RAM to be used for your data buffers, the
+	  core file provides mechanisms for manipulating the
+	  <code>PMST</code> indirectly. Instead of accessing the
+	  external Program RAM directly, we can use the special macros
+	  to access the RAM that is normally "hidden" by the internal
+	  memory. This allows us to use the full range of external
+	  memory available: addresses
+	  <code>000000h</code>-<code>00FF00h</code> and
+	  <code>010000h</code>-<code>02FFFF</code>. However, since
+	  addresses <code>00FF00h</code>-<code>00FFFFh</code> are
+	  reserved by the core file, you must be careful not to write
+	  to addresses in this range.  </para>
+      </section>
+    </section>
+    <section id="sec5">
+      <title>Accessing Extended Program RAM</title>
+      <para id="para11">
+	The core file provides two macros for accessing data stored in
+	the external Program RAM: <code>READPROG</code> and
+	<code>WRITPROG</code>.  These macros allow the processor to
+	copy data between data memory and external Program
+	memory. Both macros address external Program memory using the
+	value in accumulator <code>A</code>.  <code>READPROG</code>
+	reads data from the external Program memory location pointed
+	to by A and writes it to the data memory location pointed to
+	by <code>AR1</code>. <code>WRITPROG</code> reads data from the
+	memory location pointed to by <code>AR1</code> and writes it
+	to the location in external Program RAM specified by
+	accumulator <code>A</code>. Both macros take one parameter, a
+	count; specifying 1 reads or writes one word from external
+	memory, and specifying some other number
+	<m:math>
+	  <m:ci>n</m:ci>
+	</m:math> transfers 
+	<m:math>
+	  <m:ci>n</m:ci>
+	</m:math> words starting at the locations pointed to by
+	<code>A</code> and <code>AR1</code>.  <code>AR1</code> is left
+	pointing at the word after the last word read or written; no
+	other registers are modified.
+      </para>
+      <para id="para14">
+	For instance, the following code fragment loads the value
+	contained in memory location <code>023456h</code> into the
+	location <code>0064h</code> in data memory using the
+	<code>READPROG</code> macro:
+      </para>
+      <code display="block" id="idp8415488">
+
+	
+	1    stm	#64h,AR1	; load 64h into AR1
+	2    ld	#02h,16,A	; load 02h in high part of A
+	3    adds 	#3456h,A	; fill in low part of A
+	4				; A contains 023456h
+	5	  READPROG 1 		; read from 023456h in external Program RAM
+	6				; into *AR1 in Data RAM
+	
+      </code>
+      <para id="para15">
+	The <code>WRITPROG</code> macro can be used similarly to write
+	into extended Program RAM:
+      </para>
+      <code display="block" id="idp8418096">
+
+	      
+	1   stm	#64h,AR1	; load 64h into AR1
+	2	ld	#02h,16,A	; load 02h in high part of A
+	3	adds	#3456h,A	; fill in low part of A
+	4				; A contains 023456h
+	5	WRITPROG	1	; write from *AR1 in Data RAM to
+	6				; 023456h in external Program RAM
+	
+      </code>
+      <para id="para16">
+	Note that Code Composer will not display or allow you to
+	change the contents of the external Program RAM on the
+	memory-dump or disassembly screen, though you can view or
+	change it indirectly by watching the effects of the
+	<code>READPROG</code> and <code>WRITPROG</code> macros on data
+	memory.
+      </para>
+    </section>
+    
+  </content>
+  
+</document>

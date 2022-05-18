@@ -1,0 +1,574 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Two's Complement and Fractional Arithmetic for 16-bit Processors</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>bc3518c8-77cf-4f98-b633-e833b993fc85</md:uuid>
+</metadata>
+
+
+
+
+
+  <content>
+    <section id="sec2">
+      <title>Two's-complement notation</title>
+      <para id="p6">
+	<term>Two's-complement</term> notation is an efficient way of
+	representing signed numbers in microprocessors. It offers the
+	advantage that addition and subtraction can be done with
+	ordinary unsigned operations.  When a number is written in
+	two's complement notation, the most significant bit of the
+	number represents its sign: 0 means that the number is
+	positive, and 1 means the number is negative. A positive
+	number written in two's-complement notation is the same as the
+	number written in unsigned notation (although the most
+	significant bit must be zero). A negative number can be
+	written in two's complement notation by inverting all of the
+	bits of its absolute value, then adding one to the result.
+      </para>
+      <example id="twoscompexamp">
+	<para id="p6b">
+	  Consider the following four-bit two's complement numbers (in
+	  binary form):
+	</para>
+	<table frame="all" id="table4" summary="">
+	  <tgroup cols="2">
+	    <tbody>
+	      <row>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>1</m:cn>
+		      <m:cn base="2">0001</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>-1</m:cn>
+		      <m:apply>
+			<m:plus/>
+			<m:cn base="2">1110</m:cn>
+			<m:cn base="2">1</m:cn>
+		      </m:apply>
+		      <m:cn base="2">1111</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>2</m:cn>
+		      <m:cn base="2">0010</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>-2</m:cn>
+		      <m:apply>
+			<m:plus/>
+			<m:cn base="2">1101</m:cn>
+			<m:cn base="2">1</m:cn>
+		      </m:apply>
+		      <m:cn base="2">1110</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>6</m:cn>
+		      <m:cn base="2">0110</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>-6</m:cn>
+		      <m:apply>
+			<m:plus/>
+			<m:cn base="2">1001</m:cn>
+			<m:cn base="2">1</m:cn>
+		      </m:apply>
+		      <m:cn base="2">1010</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>8</m:cn>
+		      <m:cn base="2">1000</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:cn>-8</m:cn>
+		      <m:apply>
+			<m:plus/>
+			<m:cn base="2">0111</m:cn>
+			<m:cn base="2">1</m:cn>
+		      </m:apply>
+		      <m:cn base="2">1000</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+	<para id="p7">
+	  <note type="Note" id="idp246144"><label>Note</label>
+	    <m:math>
+	      <m:cn base="2">1000</m:cn>
+	    </m:math> represents -8, not 8.  This is because the topmost
+	    bit (the sign bit) is 1, indicating that the number is
+	    negative.
+	  </note>
+	</para>
+      </example>
+      <para id="p8">
+	The maximum number that can be represented with a
+	<m:math>
+	  <m:ci>k</m:ci>
+	</m:math>-bit two's-complement notation is
+	<m:math>
+	  <m:apply>
+	    <m:minus/>
+	    <m:apply>
+	      <m:power/>
+	      <m:cn>2</m:cn>
+	      <m:ci>k-1</m:ci>
+	    </m:apply>
+	    <m:cn>1</m:cn>
+	  </m:apply>
+	</m:math>, and the minimum number that can be represented is
+	<m:math>
+	  <m:apply>
+	    <m:power/>
+	    <m:cn>-2</m:cn>
+	    <m:ci>k-1</m:ci>
+	  </m:apply>
+	</m:math>. The maximum integer that can be represented in a
+	16-bit memory register is 32767, and the minimum integer is
+	-32768.
+      </para>
+    </section>
+    <section id="sec3">
+      <title>Fractional arithmetic</title>
+      <para id="p8b">
+	The DSP microprocessor is a 16-bit integer processor with some
+	extra support for <term>fractional arithmetic.</term>
+	Fractional arithmetic turns out to be very useful for DSP
+	programming, since it frees us from worries about overflow on
+	multiplies. (Two 16-bit numbers, multiplied together, can
+	require 32 bits for the result. Two 16-bit fixed-point
+	fractional numbers also require 32 bits for the result, but
+	the 32-bit result can be rounded into 16 bits while only
+	introducing an error of approximately
+	<m:math>
+	  <m:apply>
+	    <m:power/>
+	    <m:cn>2</m:cn>
+	    <m:cn>-16</m:cn>
+	  </m:apply>
+	</m:math>.)  For this reason, we will be using fixed-point
+	fractional representation to describe filter taps and inputs
+	throughout this course.
+      </para>
+      <para id="p9">
+	Unfortunately, the assembler and debugger we are using do not
+	recognize this fractional fixed-point representation. For this
+	reason, when you are using the assembler or debugger, you will
+	see decimal values (ranging from -32768 to 32767) on screen
+	instead of the fraction being represented. The conversion is
+	simple; the fractional number being represented is simply the
+	decimal value shown divided by 32768. This allows us to
+	represent numbers between -1 and
+	<m:math>
+	  <m:apply>
+	    <m:minus/>
+	    <m:cn>1</m:cn>
+	    <m:apply>
+	      <m:power/>
+	      <m:cn>2</m:cn>
+	      <m:cn>-15</m:cn>
+	    </m:apply>
+	  </m:apply>
+	</m:math>. 
+
+	<note type="Note" id="idm6175744"><label>Note</label>
+	  1 cannot be represented exactly.
+	</note>
+      </para>
+      <para id="p10">
+	When we multiply using this representation,
+	an extra shift left is required. Consider the two examples
+	below:
+      </para>
+      <example id="example2">
+	<table frame="all" id="table5" summary="">
+	  <tgroup cols="2">
+	    <tbody>
+	      <row>
+		<entry>fractional</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn>0.5</m:cn>
+			<m:cn>0.5</m:cn>
+		      </m:apply>
+		      <m:cn>0.25</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>decimal</entry> 
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn>16384</m:cn>
+			<m:cn>16384</m:cn>
+		      </m:apply>
+		      <!--<m:cn>268435456</m:cn>-->
+		      <m:apply>
+			<m:times/>
+			<m:cn>4096</m:cn>
+			<m:apply>
+			  <m:power/>
+			  <m:cn>2</m:cn>
+			  <m:cn>16</m:cn>
+			</m:apply>
+		      </m:apply>
+                      </m:apply>
+                      <m:cn> : 4096/32768</m:cn>
+                      <m:apply>
+                      <m:eq/>
+		      <m:cn>1/8</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>hex</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn base="16">4000</m:cn>
+			<m:cn base="16">4000</m:cn>
+		      </m:apply>
+		      <!--<m:cn base='16'>10000000</m:cn>-->
+		      <m:apply>
+			<m:times/>
+			<m:cn base="16">1000</m:cn>
+			<m:apply>
+			  <m:power/>
+			  <m:cn>2</m:cn>
+			  <m:cn>16</m:cn>
+			</m:apply>
+		      </m:apply>
+		    </m:apply>
+		  </m:math>
+		</entry> 
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+	<table frame="all" id="table6" summary="">
+	  <tgroup cols="2">
+	    <tbody>
+	      <row>
+		<entry>fractional</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn>0.125</m:cn>
+			<m:cn>0.75</m:cn>
+		      </m:apply>
+		      <m:cn>0.093750</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>decimal</entry> 
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn>4096</m:cn>
+			<m:cn>24576</m:cn>
+		      </m:apply>
+		      <!--<m:cn>101400576</m:cn>-->
+		      <m:apply>
+			<m:times/>
+			<m:cn>1536</m:cn>
+			<m:apply>
+			  <m:power/>
+			  <m:cn>2</m:cn>
+			  <m:cn>16</m:cn>
+			</m:apply>
+		      </m:apply>
+                      </m:apply>
+                      <m:cn> : 1536/32768</m:cn>
+                      <m:apply>
+                      <m:eq/>
+		      <m:cn>0.046875</m:cn>
+		    </m:apply>
+		  </m:math>
+		</entry>
+	      </row>
+	      <row>
+		<entry>hex</entry>
+		<entry>
+		  <m:math>
+		    <m:apply>
+		      <m:eq/>
+		      <m:apply>
+			<m:times/>
+			<m:cn base="16">1000</m:cn>
+			<m:cn base="16">6000</m:cn>
+		      </m:apply>
+		      <!--<m:cn base='16'>06000000</m:cn>-->
+		      <m:apply>
+			<m:times/>
+			<m:cn base="16">0600</m:cn>
+			<m:apply>
+			  <m:power/>
+			  <m:cn>2</m:cn>
+			  <m:cn>16</m:cn>
+			</m:apply>
+		      </m:apply>
+		    </m:apply>
+		  </m:math>
+		</entry> 
+	      </row>
+	    </tbody>
+	  </tgroup>
+	</table>
+      </example>
+      <para id="p11">
+	You may wish touse the MATLAB commands <code>hex2dec</code> and <code>dec2hex</code>.
+        When we do the multiplication, we are primarily interested in
+	the top 16 bits of the result, since these are the data that
+	are actually used when we store the result back into memory
+	and send it out to the digital-to-analog converter.  (The
+	entire result is actually stored in the accumulator, so
+	rounding errors do not accumulate when we do a sequence of
+	multiply-accumulate operations in the accumulators.)  As the
+	example above shows, the top 16 bits of the result of
+	multiplying the fixed point fractional numbers together is
+	half the expected fractional result. The extra left shift
+	multiplies the result by two, giving us the correct final
+	product.
+      </para>
+      <para id="p12">
+	The left-shift requirement can alternatively be explained by
+	way of decimal place alignment.  Remember that when we
+	multiply decimal numbers, we first multiply them ignoring the
+	decimal points, then put the decimal point back in the last
+	step.  The decimal point is placed so that the total number of
+	digits right of the decimal point in the multiplier and
+	multiplicand is equal to the number of digits right of the
+	decimal point in their product.  The same applies here; the
+	"decimal point" is to the right of the leftmost (sign) bit,
+	and there are 15 bits (digits) to the right of this point. So
+	there are a total of 30 bits to the right of the decimal in
+	the source.  But if we do not shift the result, there are 31
+	bits to the right of the decimal in the 32-bit result. So we
+	shift the number to the left by one bit, which effectively
+	reduces the number of bits right of the decimal to 30.
+      </para>
+      <para id="p13">
+	Before the numbers are multiplied by the ALU, each term is
+	<term>sign-extended</term> generating a 17-bit number from the
+	16-bit input.  Because the examples presented above are all
+	positive, the effect of this sign extension is simply adding
+	an extra "0" bit at the top of the register
+	(<foreign>i.e.</foreign>, positive numbers are not affected by
+	the sign extension).  As the following example illustrates,
+	not including this sign-bit for negative numbers produces
+	erroneous results.
+      </para>
+      <table frame="all" id="table7" summary="">
+	<tgroup cols="2">
+	  <tbody>
+	    <row>
+	      <entry>fractional</entry>
+	      <entry>
+		<m:math>
+		  <m:apply>
+		    <m:eq/>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn>-0.5</m:cn>
+		      <m:cn>0.5</m:cn>
+		    </m:apply>
+		    <m:cn>-0.25</m:cn>
+		  </m:apply>
+		</m:math></entry>
+	    </row>
+	    <row>
+	      <entry>decimal</entry> 
+	      <entry>
+		<m:math>
+		  <m:apply>
+		    <m:eq/>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn>49152</m:cn>
+		      <m:cn>16384</m:cn>
+		    </m:apply>
+		    <!--<m:cn>805306368</m:cn>-->
+		    <m:apply>
+		      <m:times/>
+		      <m:cn>12288</m:cn>
+		      <m:apply>
+			<m:power/>
+			<m:cn>2</m:cn>
+			<m:cn>16</m:cn>
+		      </m:apply>
+		    </m:apply>
+                    </m:apply>
+                    <m:cn> : 12288/32678</m:cn>
+                    <m:apply>
+                    <m:eq/>
+		    <m:cn>0.375</m:cn>
+		  </m:apply>
+		</m:math>
+	      </entry>
+	    </row>
+	    <row>
+	      <entry>hex</entry>
+	      <entry>
+		<m:math>
+		  <m:apply>
+		    <m:eq/>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn base="16">C000</m:cn>
+		      <m:cn base="16">4000</m:cn>
+		    </m:apply>
+		    <m:cn base="16">30000000</m:cn>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn base="16">3000</m:cn>
+		      <m:apply>
+			<m:power/>
+			<m:cn>2</m:cn>
+			<m:cn>16</m:cn>
+		      </m:apply>
+		    </m:apply>
+		  </m:apply>
+		</m:math>
+	      </entry> 
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+      <para id="p14">
+	Note that even after the result is left-shifted by one bit
+	following the multiply, the top bit of the result is still
+	"0", implying that the result is incorrectly interpreted as a
+	positive number.
+      </para>
+      <para id="p15">
+	To correct this problem, the ALU sign-extends negative
+	multipliers and multiplicands by placing a "1" instead of a
+	"0" in the added bit. This is called <term>sign
+	extension</term> because the sign bit is "extended" to the
+	left another place, adding an extra bit to the left of the
+	number without changing the number's value.
+      </para>
+      <table frame="all" id="table8" summary="">
+	<tgroup cols="2">
+	  <tbody>
+	    <row>
+	      <entry>fractional</entry>
+	      <entry>
+		<m:math>
+		  <m:apply>
+		    <m:eq/>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn>-0.5</m:cn>
+		      <m:cn>0.5</m:cn>
+		    </m:apply>
+		    <m:cn>-0.25</m:cn>
+		  </m:apply>
+		</m:math></entry>
+	    </row>
+	    <row>
+	      <entry>hex</entry>
+	      <entry>
+		<m:math>
+		  <m:apply>
+		    <m:eq/>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn base="16">1C000</m:cn>
+		      <m:cn base="16">4000</m:cn>
+		    </m:apply>
+		    <m:cn base="16">70000000</m:cn>
+		    <m:apply>
+		      <m:times/>
+		      <m:cn base="16">7000</m:cn>
+		      <m:apply>
+			<m:power/>
+			<m:cn>2</m:cn>
+			<m:cn>16</m:cn>
+		      </m:apply>
+		    </m:apply>
+		  </m:apply>
+		</m:math>
+	      </entry> 
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+      <para id="p16">
+	Although the top bit of this result is still "0", after the
+	final 1-bit left-shift the result is <code>E000 000h</code>
+	which is a negative number (the top bit is "1").  To check the
+	final answer, we can negate the product using the two's
+	complement method described above.  After flipping all of the
+	bits we have <code>1FFF FFFFh</code>, and adding one yields
+	<code>2000 0000h</code>, which equals 0.25 when interpreted as
+	an 32 bit fractional number.
+      </para>
+    </section>
+  </content>
+</document>

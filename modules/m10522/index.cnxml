@@ -1,0 +1,150 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:md="http://cnx.rice.edu/mdml">
+  
+  <title>Debugging and Troubleshooting in Code Composer</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>ce6dd5db-2ca9-43c9-8afb-7665ed5f57c0</md:uuid>
+</metadata>
+
+
+
+
+  <content>
+
+    <section id="sec1">
+      <title>Introduction</title>
+
+      <para id="para1">
+	Code Composer provides a rich debugging environment that
+	allows you to step through your code, set breakpoints, and
+	examine registers as your code executes. This document
+	provides a brief introduction to some of these debugging
+	features.
+      </para>   
+
+    </section>
+
+    <section id="sec2">
+      <title>Debugging Code</title>
+
+      <section id="subsec1">
+	<title>Controlling program flow</title>
+	<para id="para2">
+	  Breakpoints are points in the code where execution is
+	  stopped and control of the DSP is returned to the debugger,
+	  allowing you to view the contents of registers and
+	  memory. Breakpoints can be activated or deactivated by
+	  double-clicking on any line of code in the disassembly
+	  window.<footnote id="idm146000">They can also be set by pressing F9 on a line in
+	  the source-file window. However, verify that the breakpoint
+	  appears at the corresponding location in the disassembly
+	  window if you do this; there have been problems with
+	  breakpoints being set inaccurately by this method in the
+	  past.</footnote>
+	</para>
+	
+	<para id="para3">
+	  You may also want to step through your program code,
+	  executing one line at a time, to follow branches and watch
+	  memory change with the results of calculations. This can be
+	  done by choosing the "Step Into" or "Step Over" menu options
+	  from the "Debug" pull-down menu. (Unlike "Step Over," "Step
+	  Into" traces subroutine calls caused by "call" opcodes.)
+	</para>
+
+	<para id="para4">
+	  Like most DSPs, the DSP we are using is a pipelined
+	  processor, which means that instructions execute in several
+	  stages over several clock cycles.  Unfortunately, our
+	  debugger does not "flush" the pipeline of all current
+	  instructions when it halts your program; i.e., the DSP does
+	  not execute all remaining stages of instructions.  As a
+	  consequence, when a program halts, the register values shown
+	  in the register and memory windows may not actually the last
+	  values written.  Often, the values shown correspond to
+	  values written several cycles before the current
+	  instruction.  If it is necessary to know the exact contents
+	  of the registers at any particular point in the program
+	  flow, simply insert three or more <code>nop</code> (no
+	  operation) instructions into your program after the
+	  instruction in question. Then, to debug, execute the
+	  instruction in question and the <code>nop</code>
+	  instructions that follow; this will flush the pipeline.
+	</para>
+
+	<para id="para6">
+	  You can choose the "Run Free" option from the "Debug"
+	  pull-down menu to allow the your code to run freely,
+	  ignoring any breakpoints.  The code will continue running
+	  until explicitly halted with the "Halt" command.
+	</para>
+
+	<para id="para7">
+	  Note that stopping and restarting execution sometimes
+	  confuses the A/D and D/A converters on the six-channel
+	  surround-sound board.  If this happens, the output will
+	  generally go to zero or become completely unrelated to the
+	  input signal. This can be fixed by simply resetting the DSP
+	  and starting your code from the beginning.
+	</para>
+
+	<para id="para8">
+	  The bar on the left-hand side of the Code Composer Studio
+	  window contains shortcuts for many of the commands in the
+	  Debug menu.
+	  <note type="Practice" id="idp57120"><label>Practice</label>
+	    Practice setting breakpoints in your program code and
+	    single-stepping by setting a breakpoint after the
+	    <code>WAITDATA</code> call and tracing through the program
+	    flow for several iterations of the FIR filter code. What
+	    code does the <code>WAITDATA</code> call correspond to in
+	    the disassembly window?
+	  </note>
+
+	</para>
+	
+      </section>
+    </section>
+    <section id="sec4">
+      <title>Troubleshooting</title>
+      <para id="para9">
+	The DSP boards can behave unexpectedly. If there is no output,
+	try the following (from less to more drastic):
+
+	<list id="list1">
+	  <item>Use the Debug menu to halt and reset the DSP, verify
+	    that the <code>PMST</code> is set to <code>0xFFE0</code>,
+	    reload the code, reset the DSP, and restart the code.
+	  </item>
+	  <item>Press the "Reset" button on the DSP evaluation board,
+	    then use the Code Composer Studio menus to halt, reset the
+	    DSP, verify the <code>PMST</code>, reload, reset the DSP
+	    again, and restart your code.
+	  </item> 
+	  <item>Close Code Composer Studio, then
+	    <term>power-cycle</term> the DSP by unplugging power to
+	    the DSP board, waiting five seconds, and plugging it back
+	    in.  Then restart Code Composer Studio. You will need to
+	    reset the <code>PMST</code> to <code>0xFFE0</code>, then
+	    reload, reset the DSP, and execute your code.
+	  </item>
+
+	</list>
+	If code does not load correctly, close Code Composer Studio
+	and power-cycle the DSP.
+      </para>
+
+      <para id="para10">
+	If problems persist after power-cycling the DSP, ensure that
+	the DSP board is functioning properly by executing previously
+	verified code.  Do not forget to set the <code>PMST</code> and
+	to reset the DSP from the Code Composer Studio menu.
+      </para>
+
+      <para id="para11">
+	If you try all of these steps and still see problems, ask a
+	teaching assistant for help.
+      </para>
+    </section>
+
+  </content>
+  
+</document>

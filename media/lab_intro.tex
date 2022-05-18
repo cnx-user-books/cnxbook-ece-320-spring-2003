@@ -1,0 +1,192 @@
+\documentclass[11pt]{handout}
+
+\renewcommand{\coursetitle}{ECE 320}
+\renewcommand{\handouttitle}{Course Overview Handout}
+\renewcommand{\semestertitle}{Spring 2002}
+
+\begin{document}
+\setlength{\baselineskip}{0.5cm}
+\setlength{\parskip}{0.5cm}
+
+\makeboxtitle
+\vspace{0.3cm}
+
+\begin{tabbing}
+{\bf Lecturer:} \= Professor Yoram Bresler \hspace{1.2in} \= 
+{\bf \hspace{1.0in}} \= \\
+\> 112 CSL   \> \> \\
+\> 244-9660 \> \> \\
+\> ybresler@uiuc.edu \> \> \\
+ \\
+{\bf T.A.s:} 
+\> Matt Berry \> \> Dima Moussa \\
+\> mjberry@uiuc.edu \> \> dmoussa@uiuc.edu \\
+ \\
+\> Mike Russell \> \> Brian Wade \\ 
+\> merussel@uiuc.edu \> \> bwade@uiuc.edu \\
+ \\ 
+ \\
+{\bf Lecture:} 
+\> Monday 2:00, 269 Everitt Lab \> {\bf Lab:} \>
+251 Everitt Lab,  \hspace{.2in} 244-1360 \\
+\> \> \> Mon., Fri.: 3--5 \\
+\> \> \> Tue., Wed., Thurs.: 2--4 \\
+ \\
+\end{tabbing}
+
+\paragraph{Web page:} http://www.ews.uiuc.edu/\~{}ece320 
+
+\paragraph{Recommended Text:}
+Texas Instruments,
+{\em TMS320C54X DSP Reference Set Volume 1: CPU and Peripherals, 
+Volume 2: Mnemonic Instruction Set}, and {\em Volume 4: Applications Guide}.
+These documents are available in PDF and PS formats on the course web page 
+in the ``handouts'' section and are also available in hard copy in the lab.  
+It is not necessary to purchase any texts for this course, and we ask that 
+you {\bf do not} print the manuals on the lab printer.
+
+\paragraph{Office hours:} Office hours are held in the lab.  Times will 
+be announced later.  
+
+\section{Introduction}
+
+The intent of this course is to familiarize students
+with the fundamentals of 
+operating and analyzing real-time digital signal processing
+(DSP) systems including the
+theory required, the hardware used to sample and process the signals, and
+the software environment used to control the system.
+The theory is
+primarily those DSP concepts covered in ECE 310 including sampling, 
+convolution,
+filtering, filter-design, modulation, and multirate processing
+(interpolation and decimation).  The DSP hardware consists of
+an analog-to-digital (A/D) and digital-to-analog (D/A) converters 
+and a TI-549  DSP to perform the processing.
+
+%\newpage
+
+\section{Schedule}
+
+The first half of the course consists of semi-self-paced labs
+in which you will learn the specifics of the TI-54X DSP,  its assembly 
+language, and its compilers.
+For the second half of the semester, you are to select and
+complete a real-time DSP-related project.  Note in the schedule 
+below that, except for the first week of class, a ``lab week'' starts on a 
+Tuesday and ends on the following Monday.
+
+\begin{tabbing}
+Dates \hspace{.75in} \= Lecture \hspace{1.3in} \= Lab \hspace{2.0in}
+\= Requirements\\
+ \\
+Jan. 14 -- 21 \> Introduction \> Lab 0: Lab Orientation\\
+Jan. 22 -- 28 \> TI Assembly Language \> Lab 1: FIR Filtering \>
+{\em Prelab 1} \\
+Jan. 29 -- Feb. 4 \> FIR / IIR Filters \> Lab 2: IIR Filtering \>
+{\em Lab 1 quiz, Prelab 2} \\
+Feb. 5 -- 11 \> Compilers \> Lab 3: Multirate FIR Filtering \>
+{\em Lab 2 quiz, Prelab 3} \\
+Feb. 12 -- 18\> FFTs \> Lab 4: Spectrum Analyzer\>
+{\em Lab 3 quiz, Prelab 4}  \\
+Feb. 19 -- 25 \> Digital Communications \> 
+Lab 5: Digital Communications \>
+{\em Lab 4 quiz}  \\
+Feb. 26 -- Mar. 4 \> Special Topics \> continue Lab 5 \> {\em Prelab 5} \\
+
+Mar. 5 -- 11 \> Special Topics \> Project Lab 1\>
+{\em Lab 5 quiz} \\
+\> \> \>{\em Project abstract}\\
+Mar. 12 -- 25 \> Special Topics \> Project Lab 2 \> {\em Project quiz 1}\\
+Mar. 26 -- Apr. 1 \> Special Topics \> Project Topic Feedback \>
+{\em Project quiz 2} \\
+Apr. 2 -- 8 \> Special Topics \> Design Review Presentations \>
+{\em Design review slides} \\
+Apr. 9 -- 15 \> Special Topics \> Project \> {\em Pass design review}\\
+Apr. 16 -- 22 \> Special Topics \> Project \\
+Apr. 23 -- 29 \>  Special Topics \> Project \\
+Apr. 30 -- May 1 \> \> \> {\em Project demonstrations}\\
+May 1 \> \> \> {\em Project reports}\\
+\end{tabbing}
+
+\section{Grading}
+
+The structured laboratory segment will count for
+50\% of the total grade, based on completion of, and oral examination
+over, the weekly exercises with each student quizzed individually.
+Labs are worth 10 points, usually with 1 point for prelab completion,
+4 points for working code, and the remaining 5 points
+for quiz performance.
+We emphasize that grading in this class is based heavily
+on your demonstration of course material, rather than
+exams or submitted assembly code.
+
+The project will count for 50\% of the total
+grade, with 20\% of the total grade dependent on technical work on
+and oral demonstration of the
+project, and 10\% of the grade dependent on the completeness and
+quality of the design review, 10\% for the final report
+and 5\% each on project labs. 
+
+It is expected that each student will attend and participate in scheduled 
+class and laboratory meetings and report on progress, or will make 
+{\bf prior} other arrangements with the instructor or T.A.s.  The final grade 
+may be penalized if this does not occur.  
+
+\paragraph{Assignments:}  All graded assignments, including prelab exercises, 
+DSP code, and final project materials, must be submitted to receive a grade 
+in the course.  All assignments other than the final report and presentation 
+are due at the start of your scheduled laboratory meeting.  You must have your 
+code complete before the class begins on the day the lab will be quizzed.  
+We reserve the right to consider code late if it is not complete before the 
+start of the lab session in which it is due.  A late penalty of 50\% will be 
+assessed for assignments less than a week late, and no credit will be given 
+for assignments more than one week late.  In addition to these policies, the 
+final project abstract must be submitted and approved before project labs or 
+project work are accepted for grading.  Similarly, the design review must be 
+passed before demonstration, report submission, or grading of the final project 
+is allowed.
+
+\paragraph{Quizzes:} All lab quizzes must be taken during the lab on the day 
+the lab is due.  You must take the quiz during your assigned laboratory 
+period even if your lab assignment is not complete.  Any quiz not taken during 
+its assigned laboratory period will be assigned a zero grade unless other 
+arrangements are made in advance with your section TAs or Professor Bresler.  
+Exceptions to this policy will be granted only for excuses recognized 
+by the College of Engineering.
+
+\section{Lab Access}
+
+We will meet in the lab for two hours during the week at the
+assigned times.  In addition, you will be able to access
+the lab at any time during the semester using a keycard.
+
+Completion of your lab assignments will generally 
+entail additional lab time outside of the scheduled hours.
+Basic rules of courtesy must be followed when in the lab.  
+Please do not remove any lab equipment, books or manuals from 
+the lab at any time.  Do not bring food or drink into the lab.
+If you would like to listen to music as you work, please use 
+headphones.  
+
+%This includes: 
+%No Messy Food or Drink! especially meat and poultry!
+%no fighting !
+%No destroying or damaging equipment!
+%All hardware must stay in the lab!
+
+\paragraph{Keycard Access:}
+Off-hour lab time is available by way of keycard access into
+Everitt Lab as well as the DSP Lab through room 251.  Those
+students who currently have keycards should already have
+their cards activated for the DSP lab.  If you are registered
+for the class and do not have a keycard, please request one  
+in room 153 E.L..
+
+%\section{Projects}
+%
+%As mentioned, the goal of the laboratory exercises is
+%to provide you  ...
+
+\end{document}
+

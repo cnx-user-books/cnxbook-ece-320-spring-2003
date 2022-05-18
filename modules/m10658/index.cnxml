@@ -1,0 +1,723 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Spectrum Analyzer: Processor Exercise Using C Language</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>66697554-88b6-4cfe-856c-7f275efd224c</md:uuid>
+</metadata>
+
+
+  <content>
+
+    <section id="sec1">
+      <title>Implementation</title>
+
+      <para id="para1">
+        As your spectrum analyzer works on a block of samples at a
+        time, you will need to use interrupts to pause your processing
+        while samples are transferred from/to the CODEC (A/D and D/A)
+        buffer.  Fortunately, the interrupt handling routines have
+        been written for you in a C shell program available at
+        <code>v:\ece320\54x\dspclib\lab4main.c</code> and the core
+        code.
+      </para>
+
+      <section id="sec1sub1">
+        <title>Interrupt Basics</title>
+
+        <para id="para2">
+          Interrupts are an essential part of the operation of any
+          microprocessor.  They are particularly important in embedded
+          applications where DSPs are often used.  Hardware interrupts
+          provide a way for interacting with external devices while
+          the processor executes code.  For example, in a key entry
+          system, a key press would generate a hardware interrupt.
+          The system code would then jump to a specified location in
+          program memory where a routine could process the key input.
+          Interrupts provide an alternative to polling.  Instead of
+          checking for key presses at a predetermined rate (requires a
+          clock), the system could be busy executing other code.  On
+          the TI-C54x DSP, interrupts provide a convenient way to
+          transfer blocks of data to/from the CODEC in a timely
+          fashion.
+        </para>
+      </section>
+
+      <section id="sec1sub2">
+        <title>Interrupt Handline</title>
+        
+        <para id="para3">
+          The <code>lab4main.c</code> and the core code are intended
+          to make your interaction with the hardware much simpler. At
+          the heart of this interaction is the auto-buffering serial
+          port.  In the auto-buffering serial mode, the TI-C54x
+          processor is able to do processing
+          <emphasis>uninterrupted</emphasis> while samples are
+          transferred to/from a buffer of length
+          <m:math>
+            <m:apply>
+              <m:eq/>
+              <m:ci>BlockLen</m:ci>
+              <m:cn>64</m:cn>
+            </m:apply>
+          </m:math> samples. However, the spectrum analyzer to be
+          implemented in this lab works over a block of
+          <m:math>
+            <m:apply>
+              <m:eq/>
+              <m:ci>N</m:ci>
+              <m:cn>1024</m:cn>
+            </m:apply>
+          </m:math> samples.  If it were possible to compute a
+          1024-point FFT in the sample time of one
+          <code>BlockLen</code>, then no additional interrupt handling
+          routines would be necessary.  Samples could be collected in
+          a 1024-length buffer and a 1024-point FFT could be computed
+          uninterrupted while the auto-buffering buffer fills.
+          Unfortunately, the DSP is not fast enough to accomplish this
+          task.
+        </para>
+
+        <para id="para4">
+          We now provide an explanation of the shell C program
+          <code>lab4main.c</code> listed in <link target-id="sec_appendix_a">Appendix A</link>.  The
+          <code>lab4main.c</code> file contains the function
+          <code>interrupt void irq</code> and a main program.  The
+          main program is an infinite loop over blocks of
+	  <m:math>
+	    <m:apply>
+	      <m:eq/>
+	      <m:ci>N</m:ci>
+	      <m:cn>1024</m:cn>
+	    </m:apply>
+	  </m:math> samples.  Note that while the DSP is executing
+          instructions in this loop, interrupts occur every
+          <code>BlockLen</code> samples.  Inside the infinite loop,
+          you will insert code to do the operations which
+          follow. Although each of these operations may be performed
+          in C or assembly, we suggest you follow the guidelines
+          suggested.
+
+          <list id="list1" list-type="enumerated">
+            <item>Transfer inputs and outputs (C)</item>
+            <item>Apply a Hamming Window (C/assembly)</item>
+            <item>Bit-reverse the input (assembly)</item>
+            <item>Apply an 
+              <m:math>
+		<m:ci>N</m:ci>
+	      </m:math>-point FFT (assembly)</item>
+            <item>Compute the magnitude-squared spectrum (C/assembly)</item>
+            <item>Include a trigger pulse (C/assembly)</item>
+          </list>
+        </para>
+
+        <para id="para5">
+          An interrupt from the CODEC occurs every
+          <code>BlockLen</code> samples.  The
+          <code>SetAudioInterrupt(irq)</code> call in the main program
+          tells the core code to jump to the <code>irq</code> function
+          when an interrupt occurs.  In the <code>irq</code> function,
+          <code>BlockLen</code> samples of the A/D input in
+          <code>Rcvptr</code> (channel 1) are written to a length
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math> <code>inputs</code> buffer, and
+          <code>BlockLen</code> of the output samples in the
+          <code>outputs</code> buffer are written to the D/A output
+          via <code>Xmitptr</code> on channel 2.  On channel 1 of the
+          output, the input is echoed out. <emphasis>You are to fill
+          the buffer <code>outputs</code> with the windowed
+          magnitude-squared FFT values by performing the operations
+          listed above.</emphasis>
+        </para>
+
+        <para id="para6">
+          In the main code, the <code>while(!input_full);</code>
+          loop waits for
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math> samples to collect in the <code>inputs</code>
+          buffer.  Next, the
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math> inputs and outputs must be transferred.  You are
+          to write this portion of code.  This portion of code is to
+          be done first, within <code>BlockLen</code> sample times;
+          otherwise the first <code>BlockLen</code> of samples of
+          output would not be available on time.  Once this loop is
+          finished, the lengthy processing of the FFT can continue.
+          During this processing, the DSP is interrupted every
+          <code>BlockLen</code> samples to transfer samples.  Once
+          this processing is over, the infinite loop returns to
+          <code>while(!input_full);</code> to wait for
+          <m:math display="inline">
+            <m:ci>N</m:ci>
+          </m:math> samples to finish collecting.
+        </para>
+
+        <para id="para7">
+          The flow diagram in <link target-id="flow_fig"/> summarizes the
+          operation of the interrupt handling routine
+        </para>
+
+        <figure orient="horizontal" id="flow_fig">
+          <subfigure id="subfig_flow1">
+            <media id="idm6736480" alt=""><image src="../../media/main_flow.png" mime-type="image/png"/></media>
+            <caption>main</caption>
+          </subfigure>
+          <subfigure id="subfig_flow21">
+            <media id="idp2224912" alt=""><image src="../../media/interrupt_flow.png" mime-type="image/png"/></media>
+            <caption>interrupt handler</caption>
+          </subfigure>
+          <caption>
+            Overall program flow of the main function and the
+            interrupt handling function.
+          </caption>
+        </figure>
+
+      </section>
+
+      <section id="sec1sub3">
+        <title>FFT Routine</title>
+
+        <para id="para8">
+          As the list of operations indicates, bit-reversal and FFT
+          computation are to be done in assembly.  We are providing
+          you with a shell assembly file, available at
+          <code>v:\ece320\54x\dspclib\c_fft_given.asm</code> and shown
+          in <link target-id="sec4">Appendix B</link>, containing many
+          useful declarations and some code. The code for performing
+          bit-reversal and other declarations needed for the FFT
+          routine are also provided in this section.
+          <emphasis>However, we would like you to enter this code
+          manually, as you will be expected to understand its
+          operation.
+          </emphasis>
+        </para>  
+
+        <para id="para9">
+          Now, we explain how to use the FFT routine provided by TI
+          for the C54x. The FFT routine <code>fft.asm</code> located
+          in <code>v:\ece320\54x\dsplib\</code> computes an in-place,
+          complex FFT. The length of the FFT is defined as a label
+          <code>K_FFT_SIZE</code> and the algorithm assumes that the
+          input starts at data memory location <code>_fft_data</code>.
+          To have your code assemble for an
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math>-point FFT, you will have to include the following
+          label definitions in your assembly code.
+        </para>
+
+        <code display="block" id="verbatim">
+	  
+	  N                 .set       1024
+	  K_FFT_SIZE        .set       N           ; size of FFT
+	  K_LOGN            .set       10          ; number of stages (log_2(N))
+	  
+        </code>
+
+        <para id="para10">
+          In addition to defining these constants, you will have to
+          include twiddle-factor tables for the FFT.  These tables
+          <link resource="TWIDDLE1">twiddle1</link> and <link resource="TWIDDLE2">twiddle2</link>) are available in the shared
+          directory <code>v:\ece320\54x\dsplib\</code>.  Note that the
+          tables are each
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math> points long representing values from 0 to just shy
+          of 180 degrees and must be accessed using a
+          <emphasis>circular pointer</emphasis>. To include these
+          tables at the proper location in memory with the appropriate
+          labels referenced by the FFT, use the following
+        </para>
+
+        <code display="block" id="block2">
+	  
+	  .sect  ".data"
+	  .align  1024
+	  sine         .copy "v:\ece320\54x\dsplib\twiddle1"
+	  .align  1024
+	  cosine       .copy "v:\ece320\54x\dsplib\twiddle2"
+	  
+        </code>
+
+        <para id="para11">
+          The FFT provided requires that the input be in bit-reversed
+          order, with alternating real and imaginary
+          components. Bit-reversed addressing is a convenient way to
+          order input
+          <m:math>
+            <m:apply>
+              <m:ci type="fn" class="discrete">x</m:ci>
+              <m:ci>n</m:ci>
+            </m:apply>
+          </m:math> into a FFT so that the output 
+          <m:math>
+            <m:apply>
+              <m:ci type="fn">X</m:ci>
+              <m:ci>k</m:ci>
+            </m:apply>
+          </m:math> is in sequential order (<foreign>i.e.</foreign>
+          <m:math>
+            <m:apply>
+              <m:ci type="fn">X</m:ci>
+              <m:cn>0</m:cn>
+            </m:apply>
+          </m:math>,
+          <m:math>
+            <m:apply>
+              <m:ci type="fn">X</m:ci>
+              <m:cn>1</m:cn>
+            </m:apply>
+          </m:math>, …,
+          <m:math>
+            <m:apply>
+              <m:ci type="fn">X</m:ci>
+              <m:apply>
+                <m:minus/>
+		<m:ci>N</m:ci>
+		<m:cn>1</m:cn>
+              </m:apply>
+            </m:apply>
+          </m:math> for an 
+          <m:math>
+            <m:ci>N</m:ci>
+	  </m:math>-point FFT).  The following table illustrates the
+          bit-reversed order for an eight-point sequence.
+        </para>
+
+        <table frame="topbot" id="table1" summary="">
+          
+          <tgroup cols="4" align="center" colsep="1" rowsep="1">
+	    <thead valign="top">
+	      <row>
+		<entry align="center">Input Order</entry>
+		<entry align="center">Binary Representation</entry>
+		<entry align="center">Bit-Reversed Representation</entry>
+		<entry align="center">Output Order</entry>
+	      </row>
+	    </thead>
+	    <tbody valign="top">
+	      <row>
+		<entry align="center">0</entry>
+		<entry align="center">000</entry>
+		<entry align="center">000</entry>
+		<entry align="center">0</entry>
+	      </row>
+	      <row>
+		<entry align="center">1</entry>
+		<entry align="center">001</entry>
+		<entry align="center">100</entry>
+		<entry align="center">4</entry>
+	      </row>
+	      <row>
+		<entry align="center">2</entry>
+		<entry align="center">010</entry>
+		<entry align="center">010</entry>
+		<entry align="center">2</entry>
+	      </row>
+	      <row>
+		<entry align="center">3</entry>
+		<entry align="center">011</entry>
+		<entry align="center">110</entry>
+		<entry align="center">6</entry>
+	      </row>
+	      <row>
+		<entry align="center">4</entry>
+		<entry align="center">100</entry>
+		<entry align="center">001</entry>
+		<entry align="center">1</entry>
+	      </row>
+	      <row>
+		<entry align="center">5</entry>
+		<entry align="center">101</entry>
+		<entry align="center">101</entry>
+		<entry align="center">5</entry>
+	      </row>
+	      <row>
+		<entry align="center">6</entry>
+		<entry align="center">110</entry>
+		<entry align="center">011</entry>
+		<entry align="center">3</entry>
+	      </row>
+	      <row>
+		<entry align="center">7</entry>
+		<entry align="center">111</entry>
+		<entry align="center">111</entry>
+		<entry align="center">7</entry>
+	      </row>
+	    </tbody>
+          </tgroup>
+        </table>
+
+        <para id="para12">
+          The following routine performs the bit-reversed reordering
+          of the input data.  The routine assumes that the input is
+          stored in data memory starting at the location labeled
+          <code>_bit_rev_data</code>, which must be aligned to the
+          least power of two greater than the input buffer length, and
+          consists of alternating real and imaginary parts.  Because
+          our input data is going to be purely real in this lab, you
+          will have to make sure that you set the imaginary parts to
+          zero by zeroing out every other memory location.
+        </para>
+
+        <code display="block" id="block3">
+          
+	  1    bit_rev:
+	  2            STM     #_bit_rev_data,AR3          ; AR3 -&gt; original input
+	  3            STM     #_fft_data,AR7              ; AR7 -&gt; data processing buffer
+	  4            MVMM    AR7,AR2                     ; AR2 -&gt; bit-reversed data
+	  5            STM     #K_FFT_SIZE-1,BRC
+	  6            RPTBD   bit_rev_end-1
+	  7            STM     #K_FFT_SIZE,AR0             ; AR0 = 1/2 size of circ buffer
+	  8            MVDD    *AR3+,*AR2+
+	  9            MVDD    *AR3-,*AR2+
+	  10            MAR     *AR3+0B
+	  11    bit_rev_end:
+	  12            NOP
+          
+        </code>
+
+        <para id="para13">
+          As mentioned, in the above code <code>_bit_rev_data</code>
+          is a label indicating the start of the input data and
+          <code>_fft_data</code> is a label indicating the start of a
+          circular buffer where the bit-reversed data will be
+          written. Note that although <code>AR7</code> is not used by
+          the bit-reversed routine directly, it is used extensively in
+          the FFT routine to keep track of the start of the FFT data
+          space.
+        </para>
+
+        <para id="para14">
+          In general, to have a pointer index memory in bit-reversed
+          order, the <code>AR0</code> register needs to be set to
+          one-half the length of the circular buffer; a statement such
+          as <code>ARx+0B</code> is used to move the <code>ARx</code>
+          pointer to the next location. For more information regarding
+          the bit-reversed addressing mode, refer to <cite><cite-title>page
+          5-18</cite-title></cite> in the <cite url="http://www-s.ti.com/sc/psheets/spru131g/spru131g.pdf"><cite-title>TI-54x
+          CPU and Peripherals manual</cite-title></cite>.  Is it possible to
+          bit-reverse a buffer in place?  For a diagram of the
+          ordering of the data expected by the FFT routine, see
+          <cite><cite-title>Figure 4-10</cite-title></cite> in the <cite url="http://www-s.ti.com/sc/psheets/spru173/spru173.pdf"><cite-title>TI-54x
+          Applications Guide</cite-title></cite>.  Note that the FFT code uses all
+          the pointers available and does not restore the pointers to
+          their original values.
+        </para>
+      </section>
+
+      <section id="sec1sub4">
+        <title>Creating the Window</title>
+        <para id="para15">
+          As mentioned, you will be using the FFT to compute the
+          spectrum of a windowed input.  For your implementation you
+          will need to create a 1024-point Hamming window.  Create a
+          Hamming window in matlab using the function
+          <code>hamming</code>, then use <code>save_coef</code> to
+          save the window to a file that can then be included in your
+          code with the <code>.copy</code> directive.
+        </para>
+      </section>
+
+      <section id="sec1sub5">
+        <title>Displaying the Spectrum</title>
+
+        <para id="para16">
+          Once the DFT has been computed, you must calculate the
+          squared magnitude of the spectrum for display.
+
+          <equation id="eq2">
+            <m:math>
+              <m:apply>
+                <m:eq/>
+		<m:apply>
+		  <m:power/>
+		  <m:apply>
+		    <m:abs/>
+		    <m:apply>
+		      <m:ci type="fn">X</m:ci>
+		      <m:ci>k</m:ci>
+		    </m:apply>
+		  </m:apply>
+		  <m:cn>2</m:cn>
+		</m:apply>
+		<m:apply>
+		  <m:plus/>
+		  <m:apply>
+		    <m:power/>
+		    <m:apply>
+		      <m:real/>
+		      <m:apply>
+			<m:ci type="fn">X</m:ci>
+			<m:ci>k</m:ci>
+		      </m:apply>
+		    </m:apply>
+		    <m:cn>2</m:cn>
+		  </m:apply>
+		  <m:apply>
+		    <m:power/>
+		    <m:apply>
+		      <m:imaginary/>
+		      <m:apply>
+			<m:ci type="fn">X</m:ci>
+			<m:ci>k</m:ci>
+		      </m:apply>
+		    </m:apply>
+		    <m:cn>2</m:cn>
+		  </m:apply>
+		</m:apply>
+              </m:apply>
+            </m:math>
+          </equation> You may find the assembly instructions
+          <code>squr</code> and <code>squra</code> useful in
+          implementing <link target-id="eq2"/>.
+        </para>
+
+        <para id="para17">
+          Because the squared magnitude is always nonnegative, you can
+          replace one of the magnitude values with a -1.0 as a trigger
+          pulse for display on the oscilloscope. This is easily
+          performed by replacing the DC term (
+          <m:math>
+            <m:apply>
+              <m:eq/>
+	      <m:ci>k</m:ci>
+	      <m:cn>0</m:cn>
+            </m:apply>
+          </m:math>)
+          with a -1.0 when copying the magnitude values to the output buffer. The
+          trigger pulse is necessary for the oscilloscope to lock to a specific
+          point in the spectrum and keep the spectrum fixed on the scope.
+        </para>
+      </section>
+
+      <section id="sec1sub6">
+        <title>Intrinsics</title>
+
+        <para id="para18">
+          If you are planning on writing some of the code in C, then
+          you may be forced to use intrinsics.  Intrinsic instructions
+          provide a way to use assembly instructions directly in C.
+          An example of an intrinsic instruction is
+          <code>bit_rev_data[0]=_smpyr(bit_rev_data[0],window[0])</code>
+          which performs the assembly signed multiply round
+          instruction.  You may also find the <code>_lsmpy</code>
+          instruction useful.  For more information on intrinsics, see
+          <cite><cite-title>page 6-22</cite-title></cite> of the <cite url="http://www-s.ti.com/sc/psheets/spru103g/spru103g.pdf"><cite-title>TI-C54x
+          Optimizing C/C++ Compiler User's Guide</cite-title></cite>.
+        </para>
+      </section>
+
+    </section>
+
+    <section id="sec2">
+      <title>Quiz Information</title>
+
+      <para id="para19">
+        From your prelab experiments, you should be able to describe
+        the effect of windowing and zero-padding on FFT spectral
+        analysis.  In your DSP system, experiment with different
+        inputs, changing
+        <m:math>
+	  <m:ci>N</m:ci>
+	</m:math> and the type of window.  Does the
+        <m:math>
+          <m:apply>
+            <m:power/>
+	    <m:apply>
+	      <m:abs/>
+	      <m:apply>
+		<m:ci type="fn">X</m:ci>
+		<m:ci>k</m:ci>
+	      </m:apply>
+	    </m:apply>
+	    <m:cn>2</m:cn>
+          </m:apply>
+        </m:math> coincide with what you expect from Matlab?  What is
+        the relationship between the observed spectrum and the DTFT?
+      </para>
+    </section>
+
+    <section id="sec_appendix_a">
+      <title>Appendix A:</title>
+
+      <para id="para20">
+        <link resource="lab4main.c">lab4main.c</link>
+      </para>
+
+      <code display="block" id="block5">
+        
+	1    /* v:/ece320/54x/dspclib/lab4main.c */
+	2    /* dgs - 9/14/2001 */
+	3
+	4    #include "v:/ece320/54x/dspclib/core.h"    
+	5
+	6    #define N 1024			/* Number of FFT points */
+	7        
+	8    /* Function defined by c_fft_given.asm */            
+	9    void bit_rev_fft(void);
+	10
+	11    /* FFT data buffers (declared in c_fft_given.asm) */   
+	12    extern int bit_rev_data[N*2];	/* Data input for bit-reverse function */
+	13    extern int fft_data[N*2];	/* In-place FFT &amp; Output array */        
+	14    extern int window[N];		/* The Hamming window */
+	15
+	16    /* Our input/output buffers */
+	17    int inputs[N];
+	18    int outputs[N];
+	19
+	20    volatile int input_full = 0;	/* volatile means interrupt changes it */
+	21    int count = 0;
+	22
+	23    interrupt void irq(void)
+	24    {
+	25      int *Xmitptr,*Rcvptr;                      /* pointers to Xmit &amp; Rcv Bufs   */
+	26      int i;                
+	27  
+	28      static int in_irq = 0;		     /* Flag to prevent reentrance */
+	29           
+	30      /* Make sure we're not in the interrupt (should never happen) */
+	31      if( in_irq )
+	32        return;
+	33  	     
+	34      /* Mark we're processing, and enable interrupts */
+	35      in_irq = 1;
+	36      enable_irq();
+	37  
+	38      /* The following waitaudio call is guaranteed not to 
+	39         actually wait; it will simply return the pointers. */
+	40      WaitAudio(&amp;Rcvptr,&amp;Xmitptr); 		
+	41
+	42      /* input_full should never be true... */  
+	43      if( !input_full )
+	44      {
+	45        for (i=0; i&lt;BlockLen; i++)
+	46        {
+	47          /* Save input, and echo to channel 1 */
+	48          inputs[count] = Xmitptr[6*i] = Rcvptr[4*i];            
+	49      
+	50          /* Send FFT output to channel 2 */
+	51          Xmitptr[6*i+1] = outputs[count];
+	52                                              
+	53          count++;      
+	54        }
+	55      } 
+	56
+	57      /* Have we collected enough data yet? */  
+	58      if( count &gt;= N )
+	59        input_full = 1;
+	60             
+	61      /* We're not in the interrupt anymore... */             
+	62      disable_irq();
+	63      in_irq = 0;
+	64    }
+	65
+	66    main()
+	67    {
+	68      /* Initialize IRQ stuff */
+	69      count = 0;
+	70      input_full = 0;  	                 
+	71      SetAudioInterrupt(irq);       	/* Set up interrupts */
+	72  
+	73      while (1)
+	74      {   
+	75        while( !input_full );		/* Wait for a data buffer to collect */
+	76        
+	77        /* From here until we clear input_full can only take *
+	78         * BlockLen sample times, so don't do too much here. */
+	79     
+	80        /* First, transfer inputs and outputs */
+	81    
+	82            /* . . . i n s e r t   y o u r   c o d e   h e r e . . . */
+	83       
+	85        /* Done with that... ready for new data collection */
+	86        count = 0;		/* Need to reset the count */
+	87        input_full = 0;     /* Mark we're ready to collect more data */
+	88
+	89        /************************************************************/
+	90        /* Now that we've gotten the data moved, we can do the	*
+	91         * more lengthy processing.					*/
+	92    
+	93        /* Multiply the input signal by the Hamming window. */ 
+	94
+	95            /* . . . i n s e r t   y o u r   c o d e   h e r e . . . */
+	96            /*           o r   i n   a s s e m b l y                 */    
+	97
+	98        /* Bit-reverse and compute FFT*/
+	99        bit_rev_fft();
+	100    
+	101        /* Now, take absolute value squared of FFT */
+	102            /* . . . i n s e r t   y o u r   c o d e   h e r e . . . */
+	103            /*           o r   i n   a s s e m b l y                 */
+	104    
+	105        /* Last, set the DC coefficient to -1 for a trigger pulse */
+	106            /* . . . i n s e r t   y o u r   c o d e   h e r e . . . */
+	107            /*           o r   i n   a s s e m b l y                 */
+	108    
+	109        /* done, wait for next time around! */
+	110      }                 
+	111    }
+        
+      </code>
+    </section>
+
+    <section id="sec4">
+      <title>Appendix B:</title>
+
+      <para id="para21">
+        <link resource="c_fft_given.asm">c_fft_given.asm</link>
+      </para>
+
+      <code display="block" id="block6">
+        
+	1    ; v:/ece320/54x/dspclib/c_fft_given.asm
+	2    ; dgs - 9/14/2001
+	3        .copy "v:\ece320\54x\dspclib\core.inc"
+	4
+	5        .global	_bit_rev_data
+	6        .global _fft_data
+	7        .global _window
+	8	
+	9        .global _bit_rev_fft
+	10
+	11        .sect	".data"
+	12
+	13        .align 4*N
+	14    _bit_rev_data .space 16*2*N	; Input to _bit_rev_fft
+	15
+	16        .align	4*N
+	17    _fft_data .space 16*2*N		; FFT output buffer
+	18
+	19
+	20    ; Copy in the Hamming window
+	21    _window					; The Hamming window
+	22        .copy	"window.asm"	
+	23
+	24        .sect ".text"
+	25
+	26    _bit_rev_fft
+	27        ENTER_ASM
+	28                                                  
+	29        call bit_rev                    ; Do the bit-reversal.
+	30
+	31        call fft		        ; Do the FFT
+	32
+	33        LEAVE_ASM
+	34        RET                                     
+	35	
+	36    ; Copy the actual FFT subroutine.
+	37    fft_data  .set	_fft_data	; FFT code needs this.
+	38        .copy 	"v:/ece320/54x/dsplib/fft.asm"
+	39
+	40
+	41    ; If you need any more assembly subroutines, make sure you name them
+	42    ; _name, and include a ".global _name" directive at the top. Also,
+	43    ; don't forget to use ENTER_ASM at the beginning, and LEAVE_ASM
+	44    ; and RET at the end!
+        
+      </code>
+    </section>
+
+  </content>
+
+</document>

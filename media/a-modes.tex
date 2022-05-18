@@ -1,0 +1,358 @@
+\documentclass[11pt]{handout}
+
+%\setlength{\oddsidemargin}{-0.25in}
+%\setlength{\evensidemargin}{-0.25in}
+\setlength{\topmargin}{-0.5in}
+%\setlength{\textwidth}{7in}
+%\setlength{\textheight}{9in}
+
+\setlength{\parindent}{0in}
+\setlength{\parskip}{0.13in}
+
+\renewcommand{\coursetitle}{ECE 320}
+\renewcommand{\handouttitle}{An Introduction to TMS320C54x Addressing Modes}
+\renewcommand{\handoutauthor}{Mark Haun}
+\renewcommand{\semestertitle}{Spring 2000}
+
+\begin{document}
+
+%\begin{center}
+%{\LARGE\bf An Introduction to TMS320C54x Addressing Modes}\\[0.1in]
+%{\Large ECE320, Spring 2000}
+%\end{center}
+\makeboxtitle
+\vspace{0.3cm}
+
+Microprocessors provide a number of ways to specify the location of data
+to be used in calculations.  For example, one of the data values to be
+used in an
+{\tt add} instruction may be encoded as part of that
+instruction's {\it opcode}, the raw machine language produced by the
+assembler as it parses your assembly language program.  This is known as
+{\it immediate addressing}.  Or, perhaps the opcode will instead contain
+a memory address which holds the data ({\it direct addressing}).
+More commonly, the instruction will specify that an auxiliary register
+holds the memory address which in turn holds the data
+({\it indirect addressing}).  The processor knows which addressing mode
+is being used by examining special bit fields in the instruction opcode.
+
+Knowing the basic addressing modes of your microprocessor is important
+because they map directly into assembly language syntax.  Many annoying
+and sometimes hard-to-find bugs are caused by inadvertently using the wrong
+addressing mode in an instruction.
+%The TMS320C54x assembly language seems
+%especially prone to these errors, as the addressing syntax rules often
+%appear inconsistent.
+Also, in any assembly language, the need to use a
+particular addressing mode often dictates which instruction one picks for
+a given task.
+
+Chapter five, {\it Data Addressing}, in the {\it TMS320C54x DSP Reference
+Set, Volume One:  CPU Reference} contains extended descriptions of most
+of the addressing modes described below.
+
+
+\section{Accumulators: {\it src, dst}}
+
+Whenever the abbreviations {\it src} or {\it dst} are used in the assembly
+language syntax description for an instruction, it means that only the
+accumulators A and B may be used for that particular operand.  These
+are seen everywhere, but two classic examples are {\tt LD}, which always
+loads data into an accumulator from somewhere else, and
+{\tt STH/STL}, which always store data from an accumulator to somewhere
+else.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+ld   & *ar5,a  & ; sets A = (contents of memory location pointed to by AR5)\\
+sth  & b,*ar7+ & ; sets (contents of memory location pointed to be AR7) = B,\\
+     &         & ; \hspace{0.3in} and then increments AR7 by one\\
+\end{tabular}
+}
+
+
+\section{Memory-mapped Registers: {\it MMR, MMRx, MMRy}}
+
+Many of the '54x registers are memory-mapped, meaning that they occupy
+real addresses at the low end of data memory space.  The most commonly
+used of these are the auxiliary registers AR0 through AR7.  Whenever the
+abbreviation {\it MMR} is used in the assembly language syntax description
+for an instruction, it means that any memory-mapped register may be used
+for that particular operand.  Only eight instructions use memory-mapped
+register addressing:  {\tt LDM}, {\tt MVDM}, {\tt MVMD}, {\tt MVMM},
+{\tt POPM}, {\tt PSHM}, {\tt STLM}, and {\tt STM}.  With {\tt MVMM},
+since the instruction accepts two memory-mapped register operands,
+{\it MMRx} and {\it MMRy}, only AR0--AR7 and SP may be used.
+
+Don't use a star in front of ARx variables here, since this is not indirect
+addressing.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+mvmm & ar3,ar5 & ; sets AR5 = AR3\\
+stm  & \#5,ar2 & ; sets AR2 = 5\\
+ldm  & ar0,a   & ; sets A = AR0\\
+\end{tabular}
+}
+
+
+\section{Immediate Addressing: {\it \#k3, \#k5, K, \#k9, \#lk}}
+
+{\it Immediate addressing} means that the numerical value of the data is
+itself provided within the assembly instruction.  Various '54x instructions
+allow immediate data of 3, 5, 8, 9, or 16 bits in length, which are signified
+in the assembly language syntax descriptions with one of the above symbols.
+The 16 bit form is the most common and is signified by {\it \#lk}.  16 bit
+immediate values always require an extra instruction word and therefore take
+an extra machine cycle to execute.
+
+An immediate data operand is almost always specified in assembler syntax
+by prepending a pound sign ({\tt \#}) to the data.  Depending on the
+context, the assembler may assume that you meant immediate addressing
+anyway.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+ld   & \#0,a   & ; sets A = 0\\
+cmpm & ar1,\#1 & ; sets flag TC = 1 if AR1 == 1; else TC = 0\\
+\end{tabular}
+}
+
+Labels make this more complicated.  Recall that a label in your assembly
+code is nothing more than shorthand for the memory address where the
+labeled code or data is stored.  So does an instruction like
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+stm  & coef,ar2 & ; sets AR2 = memory address of label coef\\
+\end{tabular}
+}
+
+mean to store the contents of memory location {\tt coef} in AR2, or does
+it mean to store the memory address {\tt coef} itself in AR2?
+The second interpretation is correct.  Because the {\tt STM}
+instruction has only one form, expecting a {\it \#lk} immediate operand,
+the assembler doesn't care whether the label is prefixed with a pound sign
+or not.  Still, it would have been better for us to include the pound sign
+in the above example for clarity.
+
+Many instructions have several versions allowing the use of different
+addressing modes (see {\tt LD} for a good example of this).  With these
+instructions, including the pound sign is not optional when specifying
+immediate addressing.  The only safe rule, then, is to always prefix
+the label with a pound sign if you wish to specify the memory address
+of the label and not the contents of that address.
+
+If you are not sure how a particular instruction has been assembled, you
+can always examine the {\tt .lst} file produced by the assembler, and compare
+the hex opcodes listed to the left of the assembly instructions with the
+assembly opcodes given in TI's '54x assembly language manual (Chapter 4
+of the {\it Instruction Set Reference}).
+
+
+\section{Direct Addressing:  {\it Smem} and others}
+
+In the modes called {\it direct addressing} by TI, the instruction opcode
+contains a memory offset (see the ``dma'' bits on page 5-8 of the {\it CPU
+Reference}) seven bits long which is combined with either the DP (data
+pointer) or SP (stack pointer) registers to obtain a complete 16 bit
+data memory address.  This divides the data memory into pages of 128 words
+each.
+
+SP is initialized for you in the core assembly file and should not need to
+be modified.  SP-referenced direct addressing is used by the {\tt PSHD},
+{\tt PSHM}, {\tt POPD}, and {\tt POPM} instructions for stack manipulation,
+as well as by all subroutine calls and returns, which save program addresses
+on the stack.
+(Ask a TA if you are not familiar with the function of the stack in a
+microprocessor system).
+
+DP-referenced
+direct addressing is available wherever you see the {\it Smem} abbreviation
+in an assembly syntax description.  The advantage of DP-referenced
+addressing over the {\it *(lk)} form described in the next section is that
+DP-referenced
+addressing will not add an extra instruction word (and corresponding extra
+machine cycle).  The disadvantage is that it is limited to 128 words of
+contiguous memory, and you have to make sure that DP points to the right
+128 words.  DP may be changed with the {\tt LD} instruction as needed.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+ld   & 10,a & ; sets A = (contents of memory location DP + 10)\\
+add  & 6,b  & ; sets B = B + (contents of memory location DP + 6)\\
+\end{tabular}
+}
+
+(Make sure you understand that the numbers 10 and 6 above are interpreted
+as memory addresses, {\it not} data values.  To get data values, you would
+need to use a pound sign in front of the numbers.)
+
+
+\section{Absolute Addressing: {\it dmad, pmad, *(lk)/Smem}}
+
+This seems to be TI's term for all the forms of direct
+addressing which it does not call direct addressing!  It is represented
+in assembly instruction syntax definitions using one of the above
+abbreviations ({\it *(lk)} addressing is available when the syntax
+definition says {\it Smem}).
+
+
+\subsection{\it dmad}
+\vspace{-0.1in}
+
+{\it dmad} (Data Memory ADdress) operands are used by {\tt MV}xx data move
+instructions, and represent 16 bit memory addresses in data memory whose
+contents are used in the instruction.
+
+Example:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+f3ptr & .word & 0          & ; reserve one word of storage; initialize to 0\\
+      & \dots\\
+      & mvdm  & f3ptr,ar4  & ; set AR4 = memory address of f3ptr\\
+\end{tabular}
+}
+
+
+\subsection{\it pmad}
+\vspace{-0.1in}
+
+{\it pmad} (Program Memory ADdress) operands are used by the {\tt FIRS},
+{\tt MACD}, {\tt MACP},
+{\tt MVDP}, and {\tt MVPD} instructions, as well as all subroutine calls
+and branching instructions.  They represent 16 bit addresses
+in program memory whose contents are used in the instruction, or
+jumped to in the case of branch instructions.  Other than subroutine calls
+and branches, in this class, the main reason for using a {\it pmad} would
+be for the {\tt FIRS} instruction.
+
+Example:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l}
+firs & *ar3+,*ar4+,coefs\\
+\end{tabular}
+}
+
+({\tt coefs} is a label in the program section of the code, {\it not} the
+data section).
+
+
+\subsection{\it *(lk)}
+\vspace{-0.1in}
+
+{\it *(lk)} addressing is a syntactic oddity.  The star symbol generally
+means that indirect addressing is being used (see below), but this is
+actually direct addressing with a 16 bit data memory address encoded in
+the instruction's last word.  The reason for the star here is that TI
+{\it does} set the ``I'' bit in the opcode, usually denoting indirect
+addressing, and this form can only be used when an {\it Smem} is called
+for in the assembly syntax.  Other bits in the low byte of the first
+instruction word tell the processor that the ``{\it *(lk)} exception''
+is to be used, and to fetch the memory address in the next word (see the
+MOD bits on page 5-10 of the {\it CPU Reference}).  You can easily
+recognize this addressing mode in {\tt .lst} files because the low byte
+of the first instruction word always equals {\tt F8 hex}.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+hold  & .word & 1   & ; reserve one word of storage and initialize to 1\\
+count & .word & 0   & ; reserve one word of storage and initialize to 0\\
+      & \dots\\
+
+& ld   & *(count),b & ; sets B = 0 (assuming memory was not changed)\\
+& st   & t,*(hold)  & ; sets (storage location at address hold) = T\\
+\end{tabular}
+}
+
+
+\section{Indirect Addressing:  {\it Smem, Xmem, Ymem}}
+
+{\it Indirect addressing} on the '54x always uses the auxiliary registers
+AR0 through AR7, and comes in two basic flavors.  These are easily
+recognized from the assembly language syntax descriptions as either
+{\it Smem} or {\it Xmem/Ymem}.
+
+
+\subsection{\it Smem}
+\vspace{-0.1in}
+
+In {\it Smem} indirect addressing, only one indirect address is used in the
+instruction and a plethora of variations is possible (see the table on page
+5-13 of the {\it CPU Reference}).  An asterisk is always used, which
+signifies indirect addressing.  Any of the registers AR0--AR7 may be used,
+with optional modifications:  automatic post-decrement by 1, pre- and
+post-increment by 1, post-increment and post-decrement by $n$ ($n$ being
+stored in AR0), and more, including a slew of options for circular
+addressing (automatically implements circular buffers) and bit-reversed
+addressing (useful for FFTs).
+
+
+\subsection{\it Xmem/Ymem}
+\vspace{-0.1in}
+
+{\it Xmem/Ymem} indirect addressing is generally used in instructions
+which need two different indirect addresses, although there are a few
+instances where an {\it Xmem} by itself is specified in order to save
+bits in the opcode for other options.
+In {\it Xmem/Ymem} indirect addressing, Fewer bits are
+used to encode the option modifiers in the opcode;  hence, fewer options
+are available:  post-increment and post-decrement by 1, and post-increment
+by AR0 with circular addressing.
+
+Examples:
+
+{\tt
+\begin{tabular}{@{\hspace{0.4in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+stl  & b,*ar6     & ; sets (contents of location pointed to by AR6) = low word of B\\
+stl  & b,*ar6+0\% & ; sets (contents of location pointed to by AR6) = low word of B,\\
+     &            & ; \hspace{0.3in} then increments AR6 with circular addressing\\
+mar  & *+ar3(-6)  & ; decrements AR3 by 6 (increment by -6)\\
+\end{tabular}
+}
+
+(Note:  The {\tt mar} (modify address register) instruction is unusual in
+the sense that it takes an {\it Smem} operand but doesn't actually do
+anything with the data pointed to by the ARx register.  Its purpose
+is to perform any of the allowed register modifications discussed above
+without having to do anything else.  This is often handy when you are using
+an {\it Xmem/Ymem}-type instruction but need to do an ARx modification that
+is only allowed with an {\it Smem}-type operand.)
+
+
+
+\section{Summary}
+
+The {\tt LD} instruction is illustrative of the many possible addressing
+modes which can be selected with the proper choice of assembly language
+syntax:
+
+{\tt
+\begin{tabular}{@{\hspace{0.2in}}l@{\hspace{0.3in}}l@{\hspace{0.2in}}l}
+ld   & \#0,a       & ; immediate data:  sets A = 0\\
+ld   & 0,a         & ; DP-referenced direct:  sets A = (contents of the address DP + 0)\\
+ld   & mydata,a    & ; DP-referenced direct:  sets A = (contents of the address\\
+     &             & ; \hspace{0.3in} DP + lower seven bits of mydata)\\
+ld   & \#mydata,a  & ; immediate data:  sets A = 16 bit address mydata\\
+ld   & *(mydata),a & ; *(lk) direct:  sets A = (contents of the 16 bit address mydata)\\
+ld   & b,a         & ; accumulator:  sets A = B\\
+ld   & *ar1+,a     & ; indirect:  sets A = (contents of address pointed to by AR1),\\
+     &             & ; \hspace{0.3in} and afterwards increments AR1 by one\\
+ldm  & ar2,a       & ; memory-mapped register:  sets A = AR2\\
+\end{tabular}
+}
+
+
+\end{document}

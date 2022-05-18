@@ -1,0 +1,140 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:md="http://cnx.rice.edu/mdml">
+
+  <title>Preface for U of I DSP Laboratory</title>
+
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>582cd5b4-03d4-4078-b3d2-8268bafd0fcd</md:uuid>
+</metadata>
+
+
+
+
+
+  <content>
+
+    <para id="p1">
+      This text builds on over fourteen years of DSP laboratory
+      instruction and over ten years of collaborative development of
+      instructional laboratory materials.  The content has evolved in
+      tandem with ECE 320: Digital Signal Processing Laboratory, a
+      senior-level, two-credit-hour elective laboratory course at the
+      University of Illinois at Urbana-Champaign, and to a large
+      extent reflects its goals and structure.  The material is
+      nonetheless well suited for a variety of course organizations,
+      and earlier versions of the material have been used with success
+      at the University of Washington and elsewhere.
+    </para>
+    <para id="p2">
+
+      This text could be effectively used with several types of course
+      structures, including
+      <list id="list1" list-type="bulleted">
+        <item>a semester-long project-oriented DSP laboratory,</item>
+        <item>a quarter- or semester-long DSP laboratory structured
+        around weekly laboratory exercises,</item> 
+	<item>a hands-on laboratory supplement as part of a signal
+        processing theory course,</item> 
+	<item>a self-study course in DSP implementation.</item>
+      </list>
+
+      ECE 320 at the University of Illinois represents the first type
+      of course.  It consists of roughly two equal parts: a series of
+      weekly laboratory assignments, including introduction to the
+      Texas Instruments TMS320C549 microprocessor and DSP development
+      environment, real-time FIR, IIR, and multirate filtering,
+      spectral analysis using the FFT, and a digital communications
+      transmitter.  Students work together in pairs on these
+      laboratory assignments and are orally quizzed individually after
+      completing each weekly laboratory assignment.  The materials for
+      each week are a semi-self-paced tutorial with three major parts:
+      a review of the signal processing concepts, a design or
+      familiarization exercise (often MATLAB-based), and a real-time
+      implementation assignment using the TMS320C549 microprocessor.
+      After completion of these common modules in mid-semester,
+      student teams conceive of a substantial real-time DSP project of
+      their choice and spend the remainder of the semester designing,
+      simulating, implementing, and testing it.  Supplementary modules
+      introducing students to the basics of digital communication
+      (including phase-locked loops and delay-locked loops), adaptive
+      filtering, speech processing, and audio signal processing
+      accelerate students' progress on projects in these areas.
+    </para>
+    <para id="p3">
+      A course emphasizing signal processing algorithms might forgo a
+      major project and instead use the supplementary modules to
+      complete a quarter or semester of weekly laboratory assignments.
+      A one-hour hands-on laboratory supplement to a signal processing
+      lecture course could stretch the first few units
+      (<foreign>e.g.</foreign>, through spectral analysis) over a
+      semester, thereby reinforcing and enhancing students'
+      understanding of the core signal processing theory and
+      algorithms.  Due to the self-paced, tutorial nature of the
+      materials, a student can independently learn the aspects of
+      real-time DSP implementation that interest them; students in our
+      senior independent design course at the University of Illinois
+      have successfully used the materials in this manner.
+    </para>
+    <para id="p4">
+      The laboratory materials and assignments reflect our belief that
+      a thorough instruction in signal processing implementation
+      requires exposure to assembly-language programming of
+      fixed-point DSP microprocessors, as this represents an important
+      component of current and at least near-future industrial
+      practice.  Instructors with other goals or perspectives may find
+      most of the tutorial, design material, and assignments relevant
+      even if they choose compiler-based or non-real-time
+      implementation.  Laboratories using different development
+      systems or different DSP microprocessors will likely find almost
+      all of the material well suited for their needs; only the
+      hardware-specific language and instructions need be modified.
+      Earlier versions of this material have been used with several
+      different DSP microprocessors and development boards based on
+      the Motorola DSP56000 and the Texas Instruments TMS320 families.
+    </para>
+    <para id="p5">
+      Connexions is an ideal venue for this text for several reasons.
+      DSP hardware and development tools are evolving very rapidly, so
+      a textbook produced through conventional publishers is likely to
+      be almost obsolete before it is printed.  Every university has a
+      unique set of equipment, curriculum, and students, necessitating
+      site-specific specialization of laboratory instructional
+      material; conventional publishing is unable to produce textbooks
+      cost-effectively with the rapid turnaround and low volumes thus
+      required.  We have always made our materials open, available,
+      and free to other institutions to use in their own laboratory
+      course development, so the open-source spirit of the Connexions
+      project reflects our own philosophy and should more easily
+      enable others to build on our experience.  Finally, this
+      material was created, modified, rewritten, and enhanced by a
+      large and changing group of authors over a period of years in
+      response to new ideas and evolving needs, goals, and equipment;
+      its development thus embodies the Connexions philosophy.
+    </para>
+    <para id="p6">
+      The development of these materials would not have been possible
+      without the active support and encouragement of many people and
+      organizations.  First, we express our gratitude to the
+      corporations, particularly Texas Instruments, Motorola, and
+      Hewlett-Packard/Agilent, whose generosity has equipped our
+      instructional laboratory with state-of-the-art DSP development
+      systems and instruments; our laboratory course would not be
+      possible without their support.  It would also have been
+      impossible without the active support of the departmental
+      leadership and the staff of the Electrical and Computer
+      Engineering department, and particularly Dan Mast, for
+      supporting, designing, equipping, and maintaining our
+      instructional laboratory.  We thank the Connexions team for
+      their very substantial help in "connexifying" our materials,
+      including conversion of the majority of the material into CNXML
+      and MathML format; without their efforts, the text in this form
+      would not exist.  Support from the National Science Foundation
+      in recent years enables continuing development of the course in
+      response to student and industry needs.  Most importantly, we
+      are grateful to the generations of teaching assistants and
+      students who have taught and learned from these materials over
+      the past decade or more; it is their hard work, creative input,
+      and dynamic interaction that have yielded this result.
+    </para>
+ 
+  </content>
+  
+</document>

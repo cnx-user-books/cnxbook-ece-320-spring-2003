@@ -1,0 +1,606 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  
+  <title>Core File: Introduction to Six-Channel Board for TI EVM320C54</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>0719e5ad-f3e8-4f97-ad39-532a2228d6ab</md:uuid>
+</metadata>
+
+
+
+
+
+  <content>
+
+    <section id="sec2">
+      <title>The Six Channel Surround Sound Board</title>
+      <para id="para1">
+	The six-channel board attaches to the top of the DSP
+	evaluation module and replaces its onboard, one-channel A/D
+	and D/A with six channels of D/A and two channels of A/D
+	running at a sample rate of 44.1 kHz. Alternatively, the A/D
+	can be disabled and a SP/DIF digital input enabled, allowing
+	PCM digital data from a CD or DVD to be sent directly into the
+	DSP for processing. The two input channels and six output
+	channels all sample at the same time; clock skew between
+	channels is not an issue. By default, the core code reads and
+	writes blocks of 64 samples for each channel of input and
+	output; however, this aggregation can be changed to any value
+	between 1 and 80 samples<footnote id="idp7625296">The upper bound
+	is determined by the amount of memory available to the
+	auto-buffering unit.</footnote>.  If your code needs a larger
+	aggregation of samples - for instance, for a 256 point FFT -
+	you will need to do this aggregation yourself.
+      </para>
+
+      <para id="para2">
+	Other features include buffered serial communication code,
+	which allows you to send and receive data from the serial
+	port. This can be used to control your DSP program with a
+	graphical user-interface on the PC; it can also be used to
+	report status back to the PC for applications such as speech
+	recognition.
+      </para>
+
+      <para id="para3">
+	The core code, <link url="http://cnx.rice.edu/author/workgroups/90/m10017/core.asm">core.asm</link>
+	(which requires <link resource="globals.inc">globals.inc</link>,
+	<link resource="ioregs.inc">ioregs.inc</link>, and <link resource="misc.inc">misc.inc</link>) also initializes the DSP
+	itself. It enables the fractional arithmetic mode for the ALU,
+	programs the wait states for the external memory, and sets the
+	DSP clock to 80 MHz<footnote id="idp5858048">The DSP is rated to
+	run at 100 MHz; however, the serial port does not work
+	reliably when the DSP clock speed is greater than 80
+	MHz.</footnote>.
+      </para>
+      <section id="sec3">
+	<title>Testing the six-channel sample code</title>
+
+	<para id="para4">
+	  We will start with a sample application, which simply sends
+	  the inputs into the outputs--relaying both the audio inputs
+	  from the A/D converters to the D/A converters, and any data
+	  that comes in on the serial port back to the PC.  To
+	  familiarize yourself with this sample application, locate a
+	  copy of <link url="http://cnx.rice.edu/modules/m10825/latest/thru6.asm">thru6.asm</link>
+	  and assemble it.
+	</para>
+
+	<para id="para5">
+	  Once you have done that, start Code Composer. Since we are
+	  using the on-chip RAM on the TMS320C549 to hold program
+	  code, we need to map that RAM into program space before we
+	  can load our code. This can be done by opening the CPU
+	  Registers window (the same one you use to look at the
+	  <code>ARx</code> registers and the accumulators) and
+	  changing the <code>PMST</code> register to
+	  <code>0xFFE0</code>. This sets the <code>OVLY</code> bit to
+	  1, switching the internal RAM into the DSP's program memory
+	  space.
+	</para>
+
+	<para id="para6">
+	  Finally, load the <code>thru6.out</code> file, use Code
+	  Composer's <code>Reset DSP</code> menu option to reset the
+	  DSP, and run the code.  Probe at the connections with the
+	  function generator and the oscilloscope; inputs and outputs
+	  are shown in <link target-id="fig1"/>. Note that output
+	  channels 1-3 come from input channel 1, and output channels
+	  4-6 come from input channel 2. <link target-id="fig1"/> shows
+	  the six-channel board's connector configuration.
+	</para>
+
+	<figure id="fig1">
+	  <media id="idp9919648" alt=""><image src="../../media/6chan.png" mime-type="image/png"/></media>
+	  <caption>Six-Channel Board Analog Inputs and Outputs</caption>
+	</figure>
+
+	<para id="para7">
+	  Also test the serial communications portion of the <link url="http://cnx.rice.edu/modules/m10825/latest/thru6.asm">thru6.asm</link>
+	  application. This can be done by starting a provided
+	  terminal emulator package (such as Teraterm Pro or
+	  HyperTerminal), configuring it to communicate at 38400 bps,
+	  with no parity, eight data bits, and one stop bit, and
+	  attaching the correct serial port on the computer to the TI
+	  TMS320C54x EVM.  A serial port is a 9-pin D-shell connector;
+	  it is located on the DSP EVM next to the power
+	  connector. Typically, there will be two matching D-shell
+	  connectors on your computer, often labeled COM1 and COM2;
+	  make sure you connect your serial cable to the right one!
+
+	</para>
+
+	<para id="para8">
+	  Once you have started the terminal emulator, and the
+	  emulator has been correctly set to communicate with the DSP
+	  board, reload and rerun the <link url="http://cnx.rice.edu/modules/m10825/latest/thru6.asm">thru6.asm</link>
+	  application. Once it is running, you should be able to
+	  communicate with the DSP by typing text into the terminal
+	  emulator's window. Characters that you type should be echoed
+	  back; this indicates that the DSP has received and
+	  retransmitted the characters. If the DSP is not connected
+	  properly or not running, nothing will be displayed as you
+	  type. If this happens, check the connections and the
+	  terminal emulator configuration, and try again.  Due to a
+	  terminal emulation quirk, the "Enter" key does not work
+	  properly.
+	</para>
+
+	<para id="para9">
+	  After you have verified that the EVM is communicating with
+	  the PC, close the terminal window.</para>
+      </section>
+
+    </section>
+
+    <section id="sec4">
+      <title>Memory Maps and the Linker</title>
+      <para id="para10">
+	Because the DSP has separate program and data spaces, you
+	would expect for the program and data memory to be
+	independent. However, for the DSP to run at its maximum
+	efficiency, it needs to read its code from on-chip RAM instead
+	of going off-chip; off-chip access requires a one- or
+	two-cycle delay whenever an instruction is read.  The 32K
+	words of on-chip RAM, however, are a single memory block; we
+	cannot map one part of it into program space and another part
+	of it into data space. It is possible to configure the DSP so
+	that the on-chip RAM is mapped into both program space and
+	data space, allowing code to be executed from the onboard
+	memory and avoiding the extra delay.  <link target-id="fig2"/>
+	shows the DSP's memory map with the DSP's on-chip memory
+	mapped into program space.
+      </para>
+      
+      <figure id="fig2">
+	<media id="idp183136" alt=""><image src="../../media/ram2.png" mime-type="image/png"/></media>
+	<caption>Hardware Memory Map</caption>
+      </figure>
+
+      <para id="para11">
+	Because the same on-chip RAM is mapped into both program and
+	data space, you must be careful not to overwrite your code
+	with data or vice versa. To help you, the linker will place
+	the code and data in different parts of the memory map. If you
+	use the <code>.word</code> or <code>.space</code> directives
+	to inform the linker of all of your usage of data memory, you
+	will not accidentally try to reuse memory that has been used
+	to store code or other data.  (Remember that
+	<code>.word</code> allocates one memory location and
+	initializes it to the value given as its
+	parameter. <code>.space 16*&lt;words&gt;</code> allocates
+	<code>&lt;words&gt;</code> words of uninitialized storage.)
+	Avoid using syntaxes like <code>stm #2000h,AR3</code> to point
+	auxiliary registers to specific memory locations directly, as
+	you may accidentally overwrite important code or
+	data. Instead, use syntaxes like <code>stm #hold,AR3</code>,
+	where <code>hold</code> is a label for memory explicitly
+	declared by <code>.word</code> or <code>.space</code>
+	directives.
+      </para>
+
+      <para id="para12">
+	There are two types of internal memory on the TI TMS320C549
+	DSP: SARAM (Single Access RAM) and DARAM (Dual Access
+	RAM). The first 8K of internal memory is DARAM; the next 24K
+	is SARAM. The difference between these two types of memory is
+	that while SARAM can only be read or written once in a cycle,
+	DARAM can be read or written twice in a cycle. This is
+	relevant because the TMS320C549 DSP core can access memory up
+	to three times in each cycle: two accesses in Data RAM to read
+	or write operands, and one access in Program RAM to fetch the
+	next instruction.  Both DARAM and SARAM are divided into
+	"pages"; access to memory located in different "pages" will
+	never conflict. If, however, two operands are fetched from the
+	same "page" of SARAM (which is divided into 8K word pages:
+	<code>2000h</code>-<code>3FFFh</code>,
+	<code>4000h</code>-<code>5FFFFh</code>, and
+	<code>6000h</code>-<code>7FFFh</code>) in the same cycle, a
+	one-cycle stall will occur while the second memory location is
+	accessed.  Due to the pipeline, two memory accesses in the
+	same instruction execute in different cycles. However, if two
+	successive instructions access the same area of SARAM, a stall
+	can occur.
+      </para>
+
+      <para id="para13">
+	Part of the SARAM (from <code>6000h</code> to
+	<code>7FFFh</code>) is used for storing your program code; a
+	small amount of SARAM below <code>6000h</code> is also used
+	for storing the DSP's stack.  Part of the DARAM (from
+	<code>0800h</code> to <code>0FFFh</code>) is used for the
+	input and output buffers and is also unavailable. Ensure that
+	any code you write does not use any of these reserved sections
+	of data memory. In addition, the core file reserves six
+	locations in scratch-pad RAM (<code>060h</code> to
+	<code>065h</code>); do not use these locations in your program
+	code.
+      </para>
+    </section>
+
+    <section id="sec5">
+      <title>Sections and the Linker</title>
+      <para id="para15">
+	You can use the <code>.text</code> directive to declare
+	program code, and the <code>.data</code> directive to declare
+	data. However, there are many more sections defined by the
+	linker control file. Note that the core file uses memory in
+	some of these sections.
+      </para>
+      <para id="para16">
+	You can place program code in the following sections using the
+	<code>.sect</code> directive:
+	<list id="list1">
+	  <item>
+	    <code>.text</code>: (<code>.sect ".text"</code>) SARAM
+	    between <code>6000h</code> and <code>7FFFh</code> (8192
+	    words)
+	  </item>
+	  <item>
+	    <code>.etext</code>: (<code>.sect ".etext"</code>)
+	    External RAM between <code>8000h</code> and
+	    <code>FEFFh</code> (32,512 words) The test-vector version
+	    of the DSP core stores the test vectors in the
+	    <code>.etext</code> section.
+	  </item>
+	</list>
+
+	You can place data in the following sections:
+
+	<list id="list2">
+	  
+	  <item>
+	    <code>.data</code>: (<code>.sect ".data"</code>) DARAM between
+	    <code>1000h</code> and <code>1FFFh</code> (4096 words)
+	  </item>
+	  <item>
+	    <code>.sdata</code>: (<code>.sect ".sdata"</code>) SARAM between
+	    <code>2000h</code> and <code>5EFFh</code> (16,128 words)
+	  </item>
+	  <item>
+	    <code>.ldata</code>: (<code>.sect ".ldata"</code>) DARAM between
+	    <code>0080h</code> and <code>07FFh</code> (1,920 words)
+	  </item>
+	  <item>
+	    <code>.scratch</code>: (<code>.sect ".scratch"</code>) Scratchpad RAM
+	    between <code>0060h</code> and <code>007Fh</code> (32
+	    words)
+	  </item>
+	  <item>
+	    <code>.edata</code>: (<code>.sect ".edata"</code>) External RAM between
+	    <code>8000h</code> and <code>FFFFh</code> (32,768 words)
+	    (Requires special initialization; if you need to use this
+	    memory, load and run the <link url="http://cnx.rice.edu/modules/m10825/latest/thru6.asm">thru6.asm</link>
+	    application before you load your application to initialize
+	    the EVM properly.)
+	  </item>
+	</list>
+	If you always use these sections to allocate data storage
+	regions instead of setting pointers to arbitrary locations in
+	memory, you will greatly reduce the chances of overwriting
+	your program code or important data stored at other locations
+	in memory. However, the linker cannot prevent your pointers
+	from being incremented past the end of the memory areas you
+	have allocated.
+      </para>
+
+      <para id="para17">
+	<link target-id="fig3"/> shows the memory regions and sections
+	defined by the linker control file. Note that the sections
+	defined in the linker control file but not listed above are
+	reserved by the core file and should not be used.
+      </para>
+      <figure id="fig3">
+	<media id="idp243680" alt=""><image src="../../media/linkmap.png" mime-type="image/png"/></media>
+	<caption>Linker Memory Map and Section Names</caption>
+      </figure>
+    </section>
+
+    <section id="sec6">
+      <title>Using the Core File</title>
+      <para id="para18">
+	To simplify discussion, we have split up the <link url="http://cnx.rice.edu/modules/m10825/latest/thru6.asm">thru6.asm</link>
+	file into two separate files for discussion. One, <link resource="thru6a.asm">thru6a.asm</link> contains only the code for
+	using the A/D and D/A converters on the six-channel surround
+	board; the other, <link url="http://cnx.rice.edu/modules/m10821/latest/ser_echo.asm">ser_echo.asm</link>
+	contains only the code to send and receive data from the
+	serial port.
+      </para>
+      <section id="subsec6">
+	<title>Using the D/A and A/D converters</title>
+	
+	<para id="para20">
+
+	  Here we will discuss <link resource="thru6a.asm">thru6a.asm</link>, which is shown below.
+	  <link url="http://cnx.rice.edu/modules/m10821/latest/ser_echo.asm">ser_echo.asm</link>
+	  is discussed in <link document="m10821">Core
+	  File: Serial Port Communication Between MATLAB and TI
+	  TMS320C54x</link>.
+
+	</para>
+
+	<code display="block" id="codeblock2">
+	  
+
+	  1		.copy "core.asm"
+	  2
+	  3		.sect ".text"
+	  4	main
+	  5		; Your initialization goes here.
+	  6	
+	  7	loop
+	  8		; Wait for a new block of 64 samples to come in
+	  9		WAITDATA
+	  10	
+	  11		; BlockLen = the number of samples that come from WAITDATA (64)
+	  12		stm #BlockLen-1, BRC	; Repeat BlockLen=64 times
+	  13		rptb block-1		; ...from here to the "block" label
+	  14
+	  15		ld      *AR6,16, A		; Receive ch1
+	  16		mar *+AR6(2)                ; Rcv data is in every other word
+	  17		ld      *AR6,16, B		; Receive ch2
+	  18		mar *+AR6(2)                ; Rcv data is in every other word
+	  19
+	  20		; Code to process samples goes here.
+	  21
+	  22		sth A, *AR7+		; Store into output buffer, ch1
+	  23		sth A, *AR7+		; ch2
+	  24		sth A, *AR7+		; ch3
+	  25
+	  26		sth B, *AR7+		; Store into output buffer, ch4
+	  27		sth B, *AR7+		; ch5
+	  28		sth B, *AR7+		; ch6
+	  29		    
+	  30	block
+	  31		b loop
+
+	  
+
+	</code>
+
+	<para id="para21">
+
+	  <cite><cite-title>Line 1</cite-title></cite> copies in the core code, which
+	  initializes the six-channel board and the serial interface,
+	  provides the interface macros, and then jumps to "main" in
+	  your code. <cite><cite-title>Line 3</cite-title></cite> declares that what follows
+	  should be placed in the program-code area in internal
+	  memory.
+	  
+	</para>
+
+	<para id="para22">
+	  On <cite><cite-title>Line 4</cite-title></cite>, we find the label "main". This is
+	  the entry point for your code; once the DSP has finished
+	  initializing the six-channel board and the serial port, the
+	  core file jumps to this label.
+	</para>
+	
+	<para id="para23">
+	  On <cite><cite-title>Line 9</cite-title></cite>, there is a call to
+	  <code>WAITDATA</code>. <code>WAITDATA</code> waits for the
+	  next block of 64 samples to arrive from the A/D. When it
+	  returns, a pointer to the samples captured by the A/D is
+	  returned in <code>AR6</code> (which can also be referred to
+	  as <code>pINBUF</code>); a pointer to the start of the
+	  output buffer is returned in <code>AR7</code> (also
+	  <code>pOUTBUF</code>). Note that <code>WAITDATA</code>
+	  simply calls the <code>wait_fill</code> subroutine in the
+	  core file, which uses the <code>B</code> register
+	  internally, along with the <code>DP</code> register and the
+	  <code>TC</code> flag; therefore, do not expect the value of
+	  <code>B</code> to be preserved across the
+	  <code>WAITDATA</code> call.
+	</para>
+
+	<para id="para24">
+	  <cite><cite-title>Lines 12</cite-title></cite> and <cite><cite-title>13</cite-title></cite> set up a block
+	  repeat. <code>BlockLen</code> is set by the core code as the
+	  length of a block; the repeat instruction therefore repeats
+	  for every sample time.  <cite><cite-title>Lines 15-18</cite-title></cite> retrieve
+	  one sample from each of the two channels; note that the
+	  received data is placed in every other memory
+	  location. <cite><cite-title>Lines 22-24</cite-title></cite> place the first input
+	  channel into the first three output channels, and
+	  <cite><cite-title>lines 26-28</cite-title></cite> place the second input channel into
+	  the last three output channels. <link target-id="fig1" strength="3"/> shows the relationship between the channel
+	  numbers shown in the code and the inputs and outputs on the
+	  six-channel board.
+	</para>
+
+	<para id="para25">
+	  <cite><cite-title>Line 31</cite-title></cite> branches back to the top, where we wait
+	  for the next block to arrive and start over.
+	</para>
+      </section>
+
+      <section id="subsec7">
+	<title>Using test vectors</title>
+	<para id="para25a">
+	  A second version of the core file offers the same interface
+	  as the standard core file, but instead of reading input
+	  samples from the A/D converters on the six-channel board and
+	  sending output samples to the D/A converters, it reads and
+	  writes from test vectors generated in MATLAB.
+	</para>
+	
+	<para id="para26">
+	  Test vectors provide a method for testing your code with
+	  known input.  Given this known input and the specifications
+	  of the system, we can use simulations to determine the
+	  expected output of the system. We can then compare the
+	  expected output with the measured output of the system.  If
+	  the system is functioning properly, the expected output and
+	  measured output should match<footnote id="idp9434736">Will the
+	  expected output and the actual output from the DSP system
+	  match perfectly? Why or why not?</footnote>.
+
+	</para>
+
+	<para id="para27">
+	  Testing your system with test vectors may seem silly in some
+	  cases, because you can see if simple filters work by looking
+	  at the output on the oscilloscope as you change the input
+	  frequency. However, they become more useful as you write
+	  more complicated code. With more complicated DSP algorithms,
+	  testing becomes more difficult; when you correct an error
+	  that results in one case not working, you may introduce an
+	  error that causes another case to work improperly.  This may
+	  not be immediately visible if you simply look at the
+	  oscilloscope and function generator; the oscilloscope does
+	  not display the signal continuously and transient errors may
+	  be hidden.  In addition, it is easy to forget to check all
+	  possible input frequencies by sweeping the function
+	  generator after making a change.
+	</para>
+
+	<para id="para28">
+	  More importantly, the test vectors also allow you to test
+	  signals that cannot be generated or displayed with the
+	  oscilloscope and function generator.  One important signal
+	  that cannot be generated or tested with the function
+	  generator and oscilloscope is the impulse function; there is
+	  no way to view the impulse response of a filter directly
+	  without using test vectors. The unit impulse represents a
+	  particularly good test vector because it is easy to compare
+	  the actual impulse response of a digital filter against the
+	  expected impulse response. Testing using the impulse
+	  response also exposes the entire range of digital
+	  frequencies, unlike testing using periodic waveforms
+	  generated by the function generator.
+	</para>
+
+	<para id="para29">
+	  Lastly, testing using test vectors allows us to isolate the
+	  DSP from the analog input and output section. This is useful
+	  because the analog sections have some limitations, including
+	  imperfect anti-aliasing and anti-imaging filters.  Testing
+	  using test vectors allows us to ensure that what we see is
+	  due only to the digital signal processing system, and not
+	  imperfections in the analog signal or electronics.
+	</para>
+
+	<para id="para30">
+	  After generating a test vector in MATLAB, save it to a file
+	  that can be brought into your code using the MATLAB command
+	  <code>save_test_vector</code> (available as <link url="http://cnx.rice.edu/author/workgroups/90/m10017/save_test_vector.m">save_test_vector.m</link>):
+	</para>
+	<code display="block" id="codeblock3">
+	  
+	  &gt;&gt; save_test_vector('testvect.asm',ch1_in,ch2_in);  % Save test vector
+	  
+
+	</code>
+
+	<para id="para31">
+	  (where <code>ch1_in</code> and <code>ch2_in</code> are the
+	  input test vectors for input channel 1 and input channel 2;
+	  <code>ch2_in</code> can be omitted, in which case both
+	  channels of the test-vector input will have the same data.)
+	</para>
+
+	<para id="para32">
+	  Next, modify your code to include the test-vector support
+	  code and the test-vector file you have created. This can be
+	  done by replacing the first line of the file (which is a
+	  linker directive to copy in <code>core.asm</code>) with two
+	  lines. Instead of:
+	</para>
+
+	<code display="block" id="codeblock4">
+	  
+	  .copy	"core.asm"
+	  
+
+	</code>
+
+	<para id="para33">
+	  use:
+	</para>
+	<code display="block" id="codeblock4a">
+	  
+	  .copy	"testvect.asm"
+	  .copy	"vectcore.asm"
+	  
+
+	</code>
+	<para id="para34">
+	  Note that, as usual, the whitespace in front of the
+	  <code>.copy</code> directive is required.  (<link url="http://cnx.rice.edu/author/workgroups/90/m10017/vectcore.asm">Download
+	  vectcore.asm</link> into your work directory if you do not
+	  already have a copy.)
+	</para>
+
+	<para id="para35">
+	  The test vectors occupy the <code>.etext</code> section of
+	  program memory between <code>08000h</code> and
+	  <code>0FEFFh</code>. If you do not use this section, it will
+	  not interfere with your program code or data. This memory
+	  block is large enough to hold a test vector of up to 4,000
+	  elements. Both channels of input, and all six channels of
+	  output, are stored in each test vector element.
+	</para>
+	<para id="para36">
+	  Now assemble and load the file, and reset and run as usual.
+	  After a few seconds, halt the DSP (using the Halt command
+	  under the Debug window) and verify that the DSP has halted
+	  at a branch statement that branches to itself: <code>spin b
+	  spin</code>.
+	</para>
+	<para id="para37">
+	  Next, the test vector should be saved and loaded back into
+	  MATLAB.  This is done by saving
+	  <m:math>
+	    <m:apply>
+	      <m:times/>
+	      <m:cn>6</m:cn>
+	      <m:ci>k</m:ci>
+	    </m:apply>
+	  </m:math> memory elements (where 
+	  <m:math>
+	    <m:ci>k</m:ci>
+	  </m:math> is the length of the test vector in samples, and
+	  the 6 corresponds to the six output channels) starting with
+	  location <code>08000h</code> in program memory.  Do this by
+	  choosing <code>File-&gt;Data-&gt;Save...</code> in Code Composer,
+	  then entering the filename <code>output.dat</code> and
+	  pressing <code>Enter</code>.  Next, enter
+	  <code>0x8000</code> in the Address field of the dialog box
+	  that appears,
+	  <m:math>
+	    <m:apply>
+	      <m:times/>
+	      <m:cn>6</m:cn>
+	      <m:ci>k</m:ci>
+	    </m:apply>
+	  </m:math> in the Length field, and choosing "Program" from
+	  the drop-down menu next to "Page." (Always ensure that you
+	  use the correct length - six times the length of the test
+	  vector - when you save your results.)
+	</para>
+
+	<para id="para38">
+	  Last, use the <code>read_vector</code> function (available
+	  as <link url="http://cnx.rice.edu/author/workgroups/90/m10017/read_vector.m">read_vector.m</link>)
+	  to read the saved test vector output into MATLAB. Do this
+	  using the following MATLAB command:
+	</para>
+
+	<code display="block" id="codeblock6">
+	  
+	  &gt;&gt; [ch1, ch2, ch3, ch4, ch5, ch6] = read_vector('output.dat');
+	  
+
+	</code>
+
+	<para id="para39">
+	  The MATLAB vectors <code>ch1</code> through <code>ch6</code>
+	  now contain the output of your program code in response to
+	  the input from the test vector.
+	</para>
+      </section>
+      
+    </section>
+    
+  </content>
+
+  
+</document>

@@ -1,0 +1,78 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Low-Pass Filter Implementation: Introduction</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>e383da61-9e7f-415e-a402-16eb27afe39a</md:uuid>
+</metadata>
+
+
+
+  <content>
+    
+    <section id="introduction">
+      <title>Introduction</title>
+      
+      <para id="p1">
+        In this two week laboratory exercise, you will implement a
+        filter to meet a given set of specifications.  Unlike previous
+        labs, you will be graded on the basis of the efficiency of the
+        system that you implement on the DSP.  There are two broad
+        ways in which you are to optimize your low-pass filter system:
+      </para>
+
+      <list id="l1" list-type="enumerated">
+        <item> We have left the way in which you implement the
+        low-pass filter system completely open and you are free to
+        choose the method you think will be the most efficient.  In
+        <link document="m11057">filtering techniques</link>, we
+        describe three possibilities: 
+	  <list id="new1" list-type="enumerated">
+	    <item>use of an IIR filter</item> 
+	    
+	    <item>overlap-and-add or overlap-and-save using the FFT to
+	      perform fast convolution</item>
+
+	    <item>use of multi-rate and multiple filter stages to
+	      lower the overall order of the filters required to meet
+	      the specifications.</item> 
+	  </list>
+	</item> 
+
+	<item> Once you have decided on the overall system for your
+	  filter implementation and have verified that it will meet
+	  the given set of filter specifications through simulation,
+	  there are many opportunities for optimization in the actual
+	  code that you write for the DSP.  You may want to use C in
+	  your implementation, but consider the efficiency penalty
+	  incurred from that choice.  Use of the various parallel
+	  instructions available on the DSP, <foreign>e.g.</foreign>
+	  <code>ld||mac</code> and <code>st||ld</code>, may yield
+	  greater efficiency.  Of course, classical optimizations such
+	  as loop-unrolling or the precomputation of data may improve
+	  efficiency.</item>
+      </list>
+
+      <para id="p2">
+        In this lab, you are required to do the following:
+      </para>
+
+      <list id="l3" list-type="enumerated">
+        <item>Choose two techniques described in <link document="m11057">filtering techniques</link> and answer the
+        prelab questions for those two techniques.</item>
+
+        <item>Write a complete MATLAB simulation for one filtering
+        technique.  You must demonstrate that your simulation meets
+        the filter specifications given in the <link document="m11056">filter specification</link>.</item>
+        
+        <item>Implement the technique that you simulated on the DSP
+        and optimize the system to make it as efficient as possible.
+        You will be graded on the efficiency of your
+        implementation.</item>
+      </list>
+
+      <para id="p3">
+        A detailed break-down of how you will be graded and the
+        various due-dates can be found in <link document="m11058">grading</link>.
+      </para>
+    </section>
+  </content>
+  
+</document>

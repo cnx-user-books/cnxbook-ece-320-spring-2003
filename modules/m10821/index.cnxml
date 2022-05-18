@@ -1,0 +1,302 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:m="http://www.w3.org/1998/Math/MathML" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Core File: Serial Port Communication Between  MATLAB and TI TMS320C54x</title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>74c1c577-3e4c-49c7-8c4b-bb752dc5be75</md:uuid>
+</metadata>
+
+
+
+
+  <content>
+    <section id="sec1">
+      <title>Using the Serial Port</title>
+      <para id="para1">
+	The core file supports the serial port installed on the TI
+	TMS320C54x DSP. The serial port on the EVM is connected with a
+	cable to COM2 on the PC.  Before jumping to your code, the
+	core file initializes the EVM's serial port to 38,400 bits per
+	second (bps) with no parity, eight data bits, and one stop bit
+	(but it may be necessary to restart the DSP completely if the
+	serial port does not work.)  It then accepts characters
+	received from the PC by the <term>UART</term> (<term>Universal
+	Asynchronous Receiver/Transmitter</term>) and buffers them in
+	memory until your code retrieves them. It also can accept a
+	block of bytes to transmit and send them to the UART in
+	sequence.
+      </para>
+      <para id="para2">
+	Two macros are used to control the serial port:
+	<code>READSER</code> and <code>WRITSER</code>.  Both accept
+	one parameter.  <code>READSER n</code> reads up to
+	<m:math>
+	  <m:ci>n</m:ci>
+	</m:math> characters from the serial input buffer (the data
+	coming from the PC) and places them in memory starting at
+	<code>*AR3</code>. (<code>AR3</code> is left pointing one past
+	the last memory location written.) The actual number of
+	characters read is left in <code>AR1</code>. If
+	<code>AR1</code> is zero, then no characters were available in
+	the input buffer.
+	
+      </para>   
+      <para id="para3">
+	<code>WRITSER n</code> adds 
+	<m:math>
+	  <m:ci>n</m:ci>
+	</m:math> characters starting at <code>*AR3</code> to the
+	serial output buffer; in other words, it queues them to be
+	sent to the PC. <code>AR3</code> is left pointing one location
+	after the last memory location read.</para>
+      <para id="para4">
+	Note that <code>READSER</code> and <code>WRITSER</code> modify
+	registers <code>AR0</code>, <code>AR1</code>,
+	<code>AR2</code>, <code>AR3</code>, and <code>BK</code>, as
+	well as the flag <code>TC</code>. Be sure you restore these
+	registers after calling <code>READSER</code> and
+	<code>WRITSER</code> if you need them later in your code.
+      </para>
+      <para id="para5">
+	Note also that the core file allows up to 126 characters to be
+	stored in the input and output buffers. Neither the DSP
+	hardware nor the core file protect against serial-buffer
+	overflows, so you must be careful not to allow the input and
+	output buffers to overflow. (The length of the buffers can be
+	changed by editing <code>ser_rxlen</code> and
+	<code>ser_txlen</code> values in <link url="http://cnx.rice.edu/author/workgroups/90/m10017/core.asm">core.asm</link>.)
+	The buffers are 127 characters long; however, the code cannot
+	distinguish between a completely-full and completely-empty
+	buffer. Therefore, only 126 characters can be stored in the
+	buffers.</para>
+      <para id="para6">
+	It is easy to check if the input or output buffers in memory
+	are empty. The input buffer can be checked by comparing the
+	values stored in the memory locations <code>srx_head</code>
+	and <code>srx_tail</code>; if both memory locations hold the
+	same value, the input buffer is empty. Likewise, the output
+	buffer can be checked by comparing the values stored in memory
+	locations <code>stx_head</code> and <code>stx_tail</code>. The
+	number of characters in the buffer can be computed by
+	subtracting the head pointer from the tail pointer; add the
+	length of the buffer (normally 127) if the resulting distance
+	is negative.
+      </para>
+      <para id="para7">
+	The following example shows the minimal amount of code
+	necessary to echo received data back through the serial
+	port. It is available as <link resource="ser_echo.asm">ser_echo.asm</link>.
+      </para>
+
+      <code display="block" id="code1">
+	
+	1		.copy "core.asm"
+	2
+	3		.sect ".data"
+	4 	hold	.word 0
+	5              
+	6		.sect ".text"
+	7 	main
+	8		stm #hold,AR3      	; Read to hold location
+	9	 
+	10		READSER 1		; Read one byte from serial port
+	11	 
+	12		cmpm AR1,#1		; Did we get a character?
+	13		bc main,NTC		; if not, branch back to start
+	14	 
+	15		stm #hold,AR3		; Write from hold location
+	16		WRITSER 1		; ... one byte
+	17	 
+	18		b main
+	
+      </code>
+      <para id="parafix2">
+	<cite><cite-title>Line 8</cite-title></cite> sets <code>AR3</code> to point to the
+	location <code>hold</code> so that <code>READSER</code> will
+	store serial data there. On <cite><cite-title>Line 9</cite-title></cite>, <code>
+	READSER 1</code> reads one serial byte into <code>hold</code>;
+	the byte is placed in the low-order bits of the word, and the
+	high-order bits are zeroed. If a byte was read,
+	<code>AR1</code> will be set to 1. <code>AR1</code> is checked
+	in <cite><cite-title>Line 12</cite-title></cite>; <cite><cite-title>Line 13</cite-title></cite> branches back to
+	the top if no byte was read. Otherwise, <code>AR3</code> is
+	reset to <code>hold</code> (since <code>READSER</code> moved
+	it), then on <cite><cite-title>Line 16</cite-title></cite>, <code>WRITSER</code> sends
+	the word received. Finally, <cite><cite-title>Line 18</cite-title></cite> branches back
+	to the start to receive another character.
+
+
+      </para>
+      
+    </section>
+    <section id="sec2">
+      <title>Using MATLAB to Control the DSP</title>
+      <para id="para8">
+	MATLAB allows you to create a visual interface with standard
+	<term>graphical user-interface</term> (<term>GUI</term>)
+	controls such as sliders, checkboxes, and radio buttons to
+	call MATLAB scripts.  The following scripts can be used to
+	create a sample interface:
+	<list id="list1">
+	  <item>
+	    <link url="http://cnx.rice.edu/author/workgroups/90/m10821/ser_set.m">ser_set.m</link>:
+	    Initializes the serial port and user interface
+	  </item>
+	  <item><link url="http://cnx.rice.edu/author/workgroups/90/m10821/wrt_slid.m">wrt_slid.m</link>:
+	    Called when sliders are moved to send new data
+	  </item>
+	</list>
+      </para>
+
+      <section id="section3">
+	<title>Creating a MATLAB user interface</title>
+	<para id="para9">
+	  The following code (<link url="http://cnx.rice.edu/author/workgroups/90/m10821/ser_set.m">ser_set.m</link>)
+	  initializes the serial port COM2, then creates a minimal
+	  user interface consisting of three sliders.</para>
+	<code display="block" id="code2">
+	  
+	  1	% ser_set: Initialize serial port and create three sliders
+	  2	
+	  3	% Set serial port mode
+	  4	!mode com2:38400,n,8,1
+	  5	
+	  6	% open a blank figure for the slider
+	  7	Fig = figure(1);
+	  8
+	  9	% open sliders
+	  10
+	  11	%  first slider
+	  12	sld1 = uicontrol(Fig,'units','normal','pos',[.2,.7,.5,.05],...
+	  13	 'style','slider','value',4,'max',254,'min',0,'callback','wrt_slid');
+	  14
+	  15	%  second slider
+	  16	sld2 = uicontrol(Fig,'units','normal','pos',[.2,.5,.5,.05],...
+	  17	 'style','slider','value',4,'max',254,'min',0,'callback','wrt_slid');
+	  18
+	  19	%  third slider
+	  20	sld3 = uicontrol(Fig,'units','normal','pos',[.2,.3,.5,.05],...
+	  21	 'style','slider','value',4,'max',254,'min',0,'callback','wrt_slid');
+
+	  
+	</code>
+
+	<para id="parafix1">
+	  <cite><cite-title>Line 4</cite-title></cite> of this code uses the Windows
+	  <code>mode</code> command to set up serial port COM2 (which
+	  is connected to the DSP) to match the serial port settings
+	  on the DSP evaluation board: 38,400 bps, no parity, eight
+	  data bits, and one stop bit. <cite><cite-title>Line 7</cite-title></cite> then
+	  creates a new MATLAB figure for the controls; this prevents
+	  the controls from being overlaid on any graph you may have
+	  already created.
+
+
+	</para>
+	<para id="para10">
+	  <cite><cite-title>Lines 12 through the end</cite-title></cite> create the three
+	  sliders for the user interface.  Several parameters are used
+	  to specify the behavior of each slider. The first parameter,
+	  <code>Fig</code>, tells the slider to create itself in the
+	  window we created in <cite><cite-title>Line 7</cite-title></cite>. The rest of the
+	  parameters are property/value pairs:
+	  <list id="list2" list-type="labeled-item">
+	    <item><label>units</label>
+	       
+	      <code>normal</code> tells MATLAB to use positioning
+	      relative to the window boundaries.
+	    </item>
+	    <item><label>pos</label>
+	       
+	      Tells MATLAB where to place the control.
+	    </item>
+	    <item><label>style</label>
+	       
+	      Tells MATLAB what type of control to
+	      place. <code>slider</code> creates a slider control.
+	    </item>
+	    <item><label>value</label>
+	       
+	      Tells MATLAB the default value for the control.
+	    </item>
+	    <item><label>max</label>
+	      
+	      Tells MATLAB the maximum value for the control.
+	    </item>
+	    <item><label>min</label>
+	      
+	      Tells MATLAB the minimum value for the control.
+	    </item>
+	    <item><label>callback</label>
+	      
+	      Tells MATLAB what script to call when the control is
+	      manipulated. <link url="http://cnx.rice.edu/author/workgroups/90/m10821/wrt_slid.m">wrt_slid.m</link>
+	      is a MATLAB file that reads the values of the sliders
+	      and sends them to the DSP via the serial port.
+	    </item>
+	  </list>
+	</para>
+	<section id="subsec">
+	  <title>User-interface callback function</title>
+	  <para id="para11">
+	    Every time a slider is moved, the file <link url="http://cnx.rice.edu/author/workgroups/90/m10821/wrt_slid.m">wrt_slid.m</link>
+	    is called:
+	  </para>
+	  <code display="block" id="code3">
+	    
+	    1	% wrt_slid: write values of sliders out to com port
+	    2	
+	    3	% open com port for data transfer
+	    4	fid = fopen('com2:','w');
+	    5
+	    6	% send data from each slider
+	    7	v = round(get(sld1,'value'));
+	    8	fwrite(fid,v,'uint8');
+	    9
+	    10	v = round(get(sld2,'value'));
+	    11	fwrite(fid,v,'uint8');
+	    12
+	    13	v = round(get(sld3,'value'));
+	    14	fwrite(fid,v,'uint8');
+	    15
+	    16	% send reset pulse
+	    17	fwrite(fid,255,'uint8');
+	    18
+	    19	% close com port connection
+	    20	fclose(fid);
+	    
+	    
+	  </code>
+	  <para id="para12">
+	    <cite><cite-title>Line 4</cite-title></cite> of <link url="http://cnx.rice.edu/author/workgroups/90/m10821/wrt_slid.m">wrt_slid.m</link>
+	    opens COM2 for writing. (It has already been initialized
+	    by <link url="http://cnx.rice.edu/author/workgroups/90/m10821/ser_set.m">ser_set.m</link>.)
+	    Then <cite><cite-title>Line 7</cite-title></cite> reads the value of the first
+	    slider using MATLAB's <code>get</code> function to
+	    retrieve the <code>value</code> property. The value is
+	    then rounded off to create an integer, and the integer is
+	    sent as an 8-bit quantity to the DSP in <cite><cite-title>Line
+	    8</cite-title></cite>.  (The number that is sent at this step will
+	    appear when the serial port is read with
+	    <code>READSER</code> in your code.) Then the other two
+	    sliders are sent in the same way.
+	  </para>
+	  <para id="para13">
+	    <cite><cite-title>Line 17</cite-title></cite> sends <code>0xFF</code> (255) to the
+	    DSP, which can be used to indicate that the three
+	    previously-transmitted values represent a complete set of
+	    data points. Your code can check for the value 255 to
+	    detect and correct synchronization errors.
+	  </para>
+	  <para id="para14">
+	    <cite><cite-title>Line 20</cite-title></cite> closes the serial port. Note that
+	    MATLAB buffers the data being transmitted, and data is
+	    often not sent until the serial port is closed. Make sure
+	    you close the port after writing a data block to the
+	    serial port.
+	  </para>
+	</section>
+
+      </section>
+    </section>
+
+  </content>
+  
+</document>

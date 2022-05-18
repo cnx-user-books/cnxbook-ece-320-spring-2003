@@ -1,0 +1,466 @@
+<document xmlns="http://cnx.rice.edu/cnxml" xmlns:md="http://cnx.rice.edu/mdml">
+  <title>Addressing Modes for TI TMS320C54x </title>
+  <metadata><md:content-id>undefined</md:content-id><md:title/><md:uuid>fe0d793e-3abe-4bb3-94ca-57e4998fdc13</md:uuid>
+</metadata>
+
+
+
+
+  <content>
+
+    <para id="para1">
+      Microprocessors provide a number of ways to specify the location
+      of data to be used in calculations.  For example, one of the
+      data values to be used in an <code>add</code> instruction may be
+      encoded as part of that instruction's <term>opcode</term>, the
+      raw machine language produced by the assembler as it parses your
+      assembly language program.  This is known as <term>immediate
+      addressing</term>.  Alternatively, perhaps the opcode will
+      instead contain a memory address which holds the data
+      (<term>direct addressing</term>). More commonly, the instruction
+      will specify that an auxiliary register holds the memory address
+      which in turn holds the data (<term>indirect addressing</term>).
+      The processor knows which addressing mode is being used by
+      examining special bit fields in the instruction opcode.
+    </para>
+
+    <para id="para2">
+      Knowing the basic addressing modes of your microprocessor is
+      important because they map directly into assembly language
+      syntax.  Many annoying and sometimes hard-to-find bugs are
+      caused by inadvertently using the wrong addressing mode in an
+      instruction. Also, in any assembly language, the need to use a
+      particular addressing mode often dictates which instruction one
+      picks for a given task.
+    </para>
+
+    <para id="para3">
+      Chapter five, <emphasis>Data Addressing</emphasis>, in the <cite url="http://www-s.ti.com/sc/psheets/spru131g/spru131g.pdf"><cite-title>CPU
+      and Peripherals</cite-title></cite> reference contains extended descriptions
+      of most of the addressing modes described below.
+    </para>
+
+    <section id="sec1">
+      <title>Accumulators: src, dst</title>
+
+      <para id="sec1para1">
+        Whenever the abbreviations <code>src</code> or
+        <code>dst</code> are used in the assembly language syntax
+        description for an instruction, it means that only the
+        accumulators <code>A</code> and <code>B</code> may be used for
+        that particular operand.  These are seen everywhere, but two
+        classic examples are <code>ld</code>, which always loads data
+        into an accumulator from somewhere else, and
+        <code>sth/stl</code>, which always store data from an
+        accumulator to somewhere else.
+      </para>
+
+      <para id="sec1para2">
+        Examples:
+      </para>
+
+      <code display="block" id="block1">
+        
+	ld     *AR5,A     ; sets A = (contents of memory location pointed to by AR5)
+	sth    B,*AR7+    ; sets (contents of memory location pointed to be AR7) = B,
+	;    and then increments AR7 by one
+	
+      </code>
+    </section>
+
+    <section id="sec2">
+      <title>Memory-mapped Registers: MMR, MMRx, MMRy</title>
+
+      <para id="sec2para1">
+        Many of the TMS320C54x registers are memory-mapped, meaning
+        that they occupy real addresses at the low end of data memory
+        space.  The most commonly used of these are the auxiliary
+        registers <code>AR0</code> through <code>AR7</code>.  Whenever
+        the abbreviation <code>MMR</code> is used in the assembly
+        language syntax description for an instruction, it means that
+        any memory-mapped register may be used for that particular
+        operand.  Only eight instructions use memory-mapped register
+        addressing: <code>ldm</code>, <code>mvdm</code>,
+        <code>mvmd</code>, <code>mvmm</code>, <code>popm</code>,
+        <code>pshm</code>, <code>stlm</code>, and <code>stm</code>.
+        With <code>mvmm</code>, since the instruction accepts two
+        memory-mapped register operands, <code>MMRx</code> and
+        <code>MMRy</code>, only <code>AR0</code>-<code>AR7</code> and
+        <code>SP</code> may be used.
+      </para>
+
+      <para id="sec2para2">
+        Do not use an asterisk in front of <code>ARx</code> variables
+        here, since this is not indirect addressing.
+      </para>
+
+      <para id="sec2para3">
+        Examples:
+      </para>
+
+      <code display="block" id="block2">
+        
+	mvmm    AR3,AR5   ; sets AR5 = AR3
+	stm     #5,AR2    ; sets AR2 = 5
+	ldm     AR0,A     ; sets A = AR0
+	
+      </code>
+
+    </section>
+
+    <section id="sec3">
+      <title>Immediate Addressing: #k3, #k5, K, #k9, #lk</title>
+
+      <para id="sec3para1">
+        <term>Immediate addressing</term> means that the numerical
+        value of the data is itself provided within the assembly
+        instruction.  Various TMS320C54x instructions allow immediate
+        data of 3, 5, 8, 9, or 16 bits in length, which are signified
+        in the assembly language syntax descriptions with one of the
+        above symbols. The 16-bit form is the most common and is
+        signified by <code>#lk</code>.  16-bit immediate values always
+        require an extra instruction word and therefore take an extra
+        machine cycle to execute.
+      </para>
+
+      <para id="sec3para2">
+        An immediate data operand is almost always specified in
+        assembler syntax by prepending a pound sign (<code>#</code>)
+        to the data.  Depending on the context, the assembler may
+        assume that you meant immediate addressing anyway.
+      </para>
+
+      <para id="sec3para3">
+        Examples:
+      </para>
+
+      <code display="block" id="block3">
+        
+	ld       #0,A      ; sets A = 0
+	cmpm     AR1,#1    ; sets flag TC = 1 if AR1 == 1; else TC = 0
+	
+      </code>
+
+      <para id="sec3para4">
+        Labels make this more complicated.  Recall that a label in
+        your assembly code is nothing more than shorthand for the
+        memory address where the labeled code or data is stored.  So
+        does an instruction like
+      </para>
+
+      <code display="block" id="block3a">
+        
+	stm     coef,AR2   ; sets AR2 = memory address of label coef
+        
+      </code>
+      <para id="sec3para5">
+        mean to store the contents of memory location
+        <code>coef</code> in <code>AR2</code>, or does it mean to
+        store the memory address <code>coef</code> itself in
+        <code>AR2</code>? The second interpretation is correct.
+        Because the <code>stm</code> instruction has only one form,
+        expecting a <code>#lk</code> immediate operand, the assembler
+        does not care whether the label is prefixed with a pound sign
+        or not.  Still, it would have been better for us to include
+        the pound sign in the above example for clarity.
+      </para>
+
+      <para id="sec3para6">
+        Many instructions have several versions allowing the use of
+        different addressing modes (see <code>ld</code> for a good
+        example of this).  With these instructions, including the
+        pound sign is not optional when specifying immediate
+        addressing.  The only safe rule, then, is always to prefix the
+        label with a pound sign if you wish to specify the memory
+        address of the label and not the contents of that address.
+      </para>
+
+      <para id="sec3para7">
+        If you are not sure how a particular instruction has been
+        assembled, you can always examine the <code>.lst</code> file
+        produced by the assembler, and compare the hexadecimal opcodes
+        listed to the left of the assembly instructions with the
+        assembly opcodes given in the assembly language manual
+        (Chapter 4 of the <cite url="http://www-s.ti.com/sc/psheets/spru172c/spru172c.pdf"><cite-title>Mnemonic
+        Instruction Set</cite-title></cite> reference).
+      </para>
+    </section>
+
+    <section id="sec4">
+      <title>Direct Addressing: Smem and others</title>
+
+      <para id="sec4para1">
+        In the modes called <term>direct addressing</term> by TI, the
+        instruction opcode contains a memory offset (see the "dma"
+        bits on page 5-8 of the <cite url="http://www-s.ti.com/sc/psheets/spru131g/spru131g.pdf"><cite-title>
+        CPU and Peripherals</cite-title></cite> reference) seven bits long, which
+        is combined with either the <code>DP</code> (data pointer) or
+        <code>SP</code> (stack pointer) register to obtain a complete
+        16-bit data-memory address.  This divides the data memory into
+        pages of 128 words each.
+      </para>
+
+      <para id="sec4para2">
+        <code>SP</code> is initialized for you in the core file and
+        should not need to be modified.  <code>SP</code>-referenced
+        direct addressing is used by the <code>pshd</code>,
+        <code>pshm</code>, <code>popd</code>, and <code>popm</code>
+        instructions for stack manipulation, as well as by all
+        subroutine calls and returns, which save program addresses on
+        the stack.
+      </para>
+
+      <para id="sec4para3">
+        <code>DP</code>-referenced direct addressing is available
+        wherever you see the <code>Smem</code> abbreviation in an
+        assembly syntax description.  The advantage of
+        <code>DP</code>-referenced addressing over the
+        <code>*(lk)</code> form described in the next section is that
+        <code>DP</code>-referenced addressing will not add an extra
+        instruction word (and corresponding extra machine cycle).  The
+        disadvantage is that it is limited to 128 words of contiguous
+        memory, and you have to make sure that <code>DP</code> points
+        to the right 128 words.  <code>DP</code> may be changed with
+        the <code>ld</code> instruction as needed.
+      </para>
+
+      <para id="sec4para4">
+        Examples:
+      </para>
+
+      <code display="block" id="block4">
+        
+	ld     10,A      ; sets A = (contents of memory location DP + 10)
+	add    6,B       ; sets B = B + (contents of memory location DP + 6)
+        
+      </code>
+
+      <para id="sec4para5">
+
+	<note type="Note" id="idp2776848"><label>Note</label>
+	  Make sure you understand that the numbers 10 and 6 above are
+	  interpreted as memory addresses, <emphasis>not</emphasis>
+	  data values.  To get data values, you would need to use a
+	  pound sign in front of the numbers.
+	</note>
+      </para>
+    </section>
+
+    <section id="sec5">
+      <title>Absolute Addressing: dmad, pmad, *(lk)/Smem</title>
+
+      <para id="sec5para1">
+        This seems to be TI's term for all the forms of direct
+        addressing which it does not call direct addressing!  It is
+        represented in assembly-instruction syntax-definitions using
+        one of the above abbreviations (<code>*(lk)</code> addressing
+        is available when the syntax definition says
+        <code>Smem</code>).
+      </para>
+
+      <section id="sec5sub1">
+        <title>dmad</title>
+
+        <para id="sec5para2">
+          <code>dmad</code> (Data Memory ADdress) operands are used by
+          <code>mv<emphasis>xx</emphasis></code> data move
+          instructions and represent 16-bit memory addresses in data
+          memory whose contents are used in the instruction.
+        </para>
+
+        <para id="sec5para3">
+          Example:
+        </para>
+
+        <code display="block" id="block5">
+          
+	  f3ptr   .word    0          ; reserve one word of storage; initialize to 0
+	  . . . .  
+	  mvdm    f3ptr,AR4  ; set AR4 = memory address of f3ptr
+          
+        </code>
+
+      </section>
+
+      <section id="sec5sub2">
+        <title>pmad</title>
+
+        <para id="sec5para4">
+          <code>pmad</code> (Program Memory ADdress) operands are used
+          by the <code>firs</code>, <code>macd</code>,
+          <code>macp</code>, <code>mvdp</code>, and <code>mvpd</code>
+          instructions, as well as all subroutine calls and branching
+          instructions.  They represent 16-bit addresses in program
+          memory whose contents are used in the instruction, or jumped
+          to in the case of branch instructions.  Other than
+          subroutine calls and branches, the most common use of a
+          <code>pmad</code> is for the <code>firs</code> instruction.
+        </para>
+
+        <para id="sec5para5">
+          Example:
+        </para>
+
+        <code display="block" id="block5a">
+          
+	  firs    *AR3+,*AR4+,coefs
+          
+        </code>
+        <para id="sec5para5a">
+	  <note type="Note" id="idm7809472"><label>Note</label>
+	    <code>coefs</code> is a label in the program section of
+	    the code, <emphasis>not</emphasis> the data section.
+	  </note>
+        </para>
+
+      </section>
+
+      <section id="sec5sub3">
+        <title>*(lk)</title>
+
+        <para id="sec5para6">
+          <code>*(lk)</code> addressing is a syntactic oddity.  The
+          asterisk symbol generally means that indirect addressing is
+          being used (see below), but this is actually direct
+          addressing with a 16-bit data memory address encoded in the
+          instruction's last word.  The reason for the asterisk is
+          that TI <emphasis>does</emphasis> set the "I" bit in the
+          opcode, usually denoting indirect addressing, and this form
+          can only be used when an <code>Smem</code> is called for in
+          the assembly syntax.  Other bits in the low byte of the
+          first instruction word tell the processor that the
+          "<code>*(lk)</code> exception" is to be used, and to fetch
+          the memory address in the next word (see the MOD bits on
+          page 5-10 of the <cite url="http://www-s.ti.com/sc/psheets/spru131g/spru131g.pdf"><cite-title>CPU
+          and Peripherals</cite-title></cite> reference).  You can easily recognize
+          this addressing mode in <code>.lst</code> files because the
+          low byte of the first instruction word always equals
+          <code>F8h</code>.
+        </para>
+
+        <para id="sec5para7">
+          Examples:
+        </para>
+
+        <code display="block" id="block5b">
+          
+	  hold    .word    1           ; reserve one word of storage and initialize to 1
+	  count   .word    0           ; reserve one word of storage and initialize to 0
+	  . . . .
+	  ld       *(count),B  ; sets B = 0 (assuming memory was not changed)
+	  st       T,*(hold)   ; sets (storage location at address hold) = T
+          
+        </code>
+      </section>
+    </section>
+
+    <section id="sec6">
+      <title>Indirect Addressing:  Smem, Xmem, Ymem</title>
+
+      <para id="sec6para1">
+        <term>Indirect addressing</term> on the TMS320C54x always uses
+        the auxiliary registers <code>AR0</code> through
+        <code>AR7</code> and comes in two basic flavors.  These are
+        easily recognized from the assembly language syntax
+        descriptions as either <code>Smem</code> or
+        <code>Xmem/Ymem</code>.
+      </para>
+
+      <section id="sec6sub1">
+        <title>Smem</title>
+
+        <para id="sec6para2">
+          In <code>Smem</code> indirect addressing, only one indirect
+          address is used in the instruction and a number of
+          variations is possible (see the table on page 5-13 of the
+          <cite url="http://www-s.ti.com/sc/psheets/spru131g/spru131g.pdf"><cite-title>CPU
+          and Peripherals</cite-title></cite> reference).  An asterisk is always
+          used, which signifies indirect addressing.  Any of the
+          registers <code>AR0</code>-<code>AR7</code> may be used,
+          with optional modifications: automatic post-decrement by
+          one, pre- and post-increment by one, post-increment and
+          post-decrement by <code>n</code> (<code>n</code> being
+          stored in <code>AR0</code>), and more, including many
+          options for circular addressing (which automatically
+          implements circular buffers) and bit-reversed addressing
+          (which is useful for FFTs).
+        </para>
+
+      </section>
+
+      <section id="sec6sub2">
+        <title>Xmem/Ymem</title>
+
+        <para id="sec6para3">
+          <code>Xmem/Ymem</code> indirect addressing is generally used
+          in instructions that need two different indirect addresses,
+          although there are a few instances where an
+          <code>Xmem</code> by itself is specified in order to save
+          bits in the opcode for other options. In
+          <code>Xmem/Ymem</code> indirect addressing, fewer bits are
+          used to encode the option modifiers in the opcode; hence,
+          fewer options are available: post-increment by one,
+          post-decrement by one, and post-increment by
+          <code>AR0</code> with circular addressing.
+        </para>
+
+        <para id="sec6para4">
+          Examples:
+        </para>
+
+        <code display="block" id="block6">
+          
+	  stl    B,*AR6     ; sets (contents of location pointed to by AR6) = low word of B
+	  stl    B,*AR6+0%  ; sets (contents of location pointed to by AR6) = low word of B,
+	  ;      then increments AR6 with circular addressing
+	  mar    *+AR3(-6)  ; decrements AR3 by 6 (increment by -6)
+          
+        </code>
+
+        <para id="para6end">
+
+	  <note type="Note" id="idm6587328"><label>Note</label>
+	    The <code>mar</code> (modify address register) instruction
+	    is unusual in the sense that it takes an <code>Smem</code>
+	    operand but does nothing with the data pointed to by the
+	    <code>ARx</code> register.  Its purpose is to perform any
+	    of the allowed register modifications discussed above
+	    without having to do anything else.  This is often handy
+	    when you are using an <code>Xmem/Ymem</code>-type
+	    instruction but need to do an <code>ARx</code>
+	    modification that is only allowed with an
+	    <code>Smem</code>-type operand.
+	  </note>
+        </para>
+      </section>
+    </section>
+
+    <section id="sec7"> 
+      <title>Summary</title>
+
+      <para id="sec7para1">
+        The <code>ld</code> instruction is illustrative of the many
+        possible addressing modes which can be selected with the
+        proper choice of assembly language syntax:
+      </para>
+
+      <code display="block" id="block7">
+        
+	ld      #0,A         ; immediate data:  sets A = 0
+	ld      0,A          ; DP-referenced direct:  sets A = (contents of the address DP + 0)
+	ld      mydata,A     ; DP-referenced direct:  sets A = (contents of the address
+	;       DP + lower seven bits of mydata)
+	ld      #mydata,A    ; immediate data:  sets A = 16 bit address mydata
+	ld      *(mydata),A  ; *(lk) direct:  sets A = (contents of the 16 bit address mydata)
+	ld      B,A          ; accumulator:  sets A = B
+	ld      *AR1+,A      ; indirect:  sets A = (contents of address pointed to by AR1),
+	;       and afterwards increments AR1 by one
+	ldm     AR2,A        ; memory-mapped register:  sets A = AR2
+        
+      </code>
+
+    </section>
+
+  </content>
+  
+</document>
